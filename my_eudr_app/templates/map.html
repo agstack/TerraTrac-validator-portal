@@ -1,0 +1,51 @@
+<!--
+=========================================================
+* Argon Dashboard 2 - v2.0.4
+=========================================================
+
+* Product Page: https://www.creative-tim.com/product/argon-dashboard
+* Copyright 2022 Creative Tim (https://www.creative-tim.com)
+* Licensed under MIT (https://www.creative-tim.com/license)
+* Coded by Creative Tim
+
+=========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+-->
+<!-- prettier-ignore -->
+{% extends 'base.html' %} {% block title %}Map{% endblock %} {% block additional_title_content %} Map {% endblock %} {% block content %}
+
+<div class="w-100">
+  <div class="col-md-12 position-relative">
+    <div id="loader-container">
+      <div class="planet-container">
+        <div class="night"></div>
+        <div class="day"></div>
+        <div class="clouds"></div>
+        <div class="inner-shadow"></div>
+      </div>
+      <span>Please wait while the map loads</span>
+    </div>
+    <div id="mapMonde" style="height: 80vh; border-radius: 10px"></div>
+    <div class="floating-share d-none">
+      <i class="fas fa-share-alt"></i>
+      <div class="share-options">
+        <a href="#copy" id="copyLink" title="Copy Link"
+          ><i class="fas fa-copy text-muted"></i> Copy Link</a
+        >
+        <a
+          href="#whatsapp"
+          id="whatsappShare"
+          title="Share on WhatsApp"
+          target="_blank"
+          ><i class="fab fa-whatsapp text-success"></i> Whatsapp</a
+        >
+        <a href="#mail" id="emailShare" title="Share via Email"
+          ><i class="fas fa-envelope text-danger"></i> Email</a
+        >
+      </div>
+    </div>
+  </div>
+
+  {% endblock %}
+</div>

@@ -1,0 +1,530 @@
+<!--
+=========================================================
+* Argon Dashboard 2 - v2.0.4
+=========================================================
+
+* Product Page: https://www.creative-tim.com/product/argon-dashboard
+* Copyright 2022 Creative Tim (https://www.creative-tim.com)
+* Licensed under MIT (https://www.creative-tim.com/license)
+* Coded by Creative Tim
+
+=========================================================
+
+* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+-->
+<!-- prettier-ignore -->
+{% extends 'base.html' %} {% block title %}Validator{% endblock %} {% block additional_title_content %}
+Validator
+{% endblock %} {% block content %}
+
+<div class="w-100 px-4">
+  <div class="row mb-5">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header pb-0">
+          <div class="d-flex align-items-center">
+            <h6 class="mb-0">Upload New Plots Information</h6>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-12 d-flex justify-content-center">
+              <button
+                class="btn btn-primary btn-sm d-flex align-items-center"
+                data-bs-toggle="modal"
+                data-bs-target="#uploadFarmInfoModal"
+                data-bs-backdrop="static"
+                data-bs-keyboard="false"
+              >
+                <i
+                  class="ni ni-cloud-upload-96 text-white text-sm opacity-10 me-3"
+                ></i
+                >Upload Here
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="d-flex card-header pb-0">
+          <h6 id="farms_list_title">Plots List</h6>
+          <div class="ms-auto">
+            <a
+              href="{% url 'map' %}"
+              class="d-none btn btn-primary btn-sm ms-auto text-white"
+              id="viewOverlapsBtn"
+            >
+              <i class="fa-solid fa-layer-group me-2"></i>
+              View Overlaps
+            </a>
+            <a
+              href="{% url 'map' %}"
+              class="d-none btn btn-primary btn-sm ms-auto text-white"
+              id="viewMapBtn"
+            >
+              <i class="fa fa-map me-2"></i>
+              View on Map
+            </a>
+            <button
+              class="btn btn-primary btn-sm ms-auto text-white d-none"
+              id="revalidate-all"
+            >
+              <i class="fa fa-redo me-2"></i>
+              Re-Validate
+            </button>
+            <div class="dropdown d-inline-block">
+              <button
+                class="btn btn-primary btn-sm text-white"
+                type="button"
+                id="exportFormatButton"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                disabled
+              >
+                <i class="fa fa-download me-2"></i>
+                Export Data
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="exportFormatButton">
+                <li>
+                  <a
+                    class="dropdown-item text-primary"
+                    href="#"
+                    onclick="handleExport('xls')"
+                  >
+                    Export as Excel
+                  </a>
+                  <hr class="dropdown-divider bg-dark mx-3" />
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item text-primary"
+                    href="#"
+                    onclick="handleExport('geojson')"
+                  >
+                    Export as GeoJSON
+                  </a>
+                  <hr class="dropdown-divider bg-dark mx-3" />
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item text-primary"
+                    href="#"
+                    onclick="handleExport('pdf')"
+                  >
+                    Export as PDF
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card-body px-0 pt-0 pb-2">
+          <div class="d-flex justify-content-start gap-1 ms-4">
+            <div class="d-flex align-items-center mb-3 w-50">
+              <label for="filterDropdown" class="form-label"
+                >Filter By Collection Site:</label
+              >
+              <select id="csFilterDropdown" class="form-select w-30 ms-3">
+                <option value="" selected>All</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center mb-3 w-50">
+              <label for="filterDropdown" class="form-label"
+                >Filter By Risk Level:</label
+              >
+              <select
+                id="riskLevelFilterDropdown"
+                class="form-select w-30 ms-3"
+              >
+                <option value="" selected>All</option>
+                <option value="low">Low</option>
+                <option value="high">High</option>
+                <option value="more_info_needed">More Info Needed</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive p-0">
+            <table
+              id="farms"
+              class="table table-striped align-items-center mb-0"
+              style="min-width: 100%"
+            >
+              <thead>
+                <tr>
+                  <th
+                    class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
+                  >
+                    No.
+                  </th>
+                  <th
+                    class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 w-10"
+                  >
+                    Geo ID
+                  </th>
+                  <th
+                    class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 w-10"
+                  >
+                    Farmer Name
+                  </th>
+                  <th
+                    class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"
+                  >
+                    Size (Ha)
+                  </th>
+                  <th
+                    class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"
+                  >
+                    Site
+                  </th>
+                  <th
+                    class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"
+                  >
+                    Village
+                  </th>
+                  <th
+                    class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"
+                  >
+                    District
+                  </th>
+                  <th
+                    class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 w-10"
+                  >
+                    Risk Level
+                    <!-- add info icon to open modal -->
+                    <i
+                      class="fa fa-info-circle text-primary ms-1"
+                      data-bs-toggle="modal"
+                      data-bs-target="#whispAnalysisCriteriasModal"
+                      onclick="event.stopPropagation()"
+                    ></i>
+                  </th>
+                  <th
+                    class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
+                  >
+                    Analysis
+                  </th>
+                  <th
+                    class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
+                  >
+                    Uploaded On
+                  </th>
+                  <th
+                    class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="farmsBodyContainer">
+                <tr>
+                  <td colspan="11" class="text-center">
+                    <i>Wait while fetching the data...</i>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="modal fade"
+    id="fullpageLoaderModal"
+    tabindex="-1"
+    aria-labelledby="fullpageLoaderModalLabel"
+    aria-hidden="true"
+    data-bs-backdrop="static"
+    data-bs-keyboard="false"
+  >
+    <div class="modal-dialog modal-fullscreen-lg-down">
+      <div class="modal-content">
+        <div
+          class="modal-body d-flex justify-content-center align-items-center"
+        >
+          <div class="text-center">
+            <h5 class="mt-1">Revalidating the plots</h5>
+            <div class="mt-4 mb-3">
+              <div class="progress-rev">
+                <div
+                  class="progress-bar progress-bar-striped progress-bar-animated bg-secondary"
+                  role="progressbar"
+                  style="width: 100%; height: 20px"
+                  aria-valuenow="50"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                >
+                  <span
+                    id="upload-progress-text"
+                    class="progress-text py-2 font-italic"
+                    >Wait while processing...</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="modal fade"
+    id="whispAnalysisModal"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="whispAnalysisModalLabel"
+    aria-hidden="true"
+    data-bs-backdrop="static"
+    data-bs-keyboard="false"
+  >
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="whispAnalysisModalLabel">
+            General Analysis Overview
+          </h5>
+          <button
+            type="button"
+            class="close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          >
+            <i class="fa fa-times text-dark-emphasis" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="whispCardsContainer" class="row"></div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="modal fade"
+    id="whispAnalysisCriteriasModal"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="whispAnalysisCriteriasModalLabel"
+    aria-hidden="true"
+    data-bs-backdrop="static"
+    data-bs-keyboard="false"
+  >
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="whispAnalysisCriteriasModalLabel">
+            Risk Level Criteria
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          >
+            <i class="fa fa-times text-dark-emphasis" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <!-- add N.B that there is referenced site -->
+            <div class="col-md-12">
+              <p class="text-xs text-muted">
+                The risk level is determined by the following criteria as per
+                <a
+                  class="link-primary"
+                  href="https://openforis.org/solutions/whisp/"
+                  target="_blank"
+                  >Whisp definition</a
+                >:
+              </p>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div class="d-flex justify-content-between">
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="d-flex flex-column">
+                      <div class="d-flex align-items-center me-3">
+                        <div
+                          class="bg-secondary rounded-circle me-2"
+                          style="width: 10px; height: 10px"
+                        ></div>
+                        <span class="text-success">Low</span>
+                      </div>
+                      <p class="text-xs text-muted ms-3">
+                        any plot outside of mapped forest, overlapping with an
+                        available commodity map or with any observed disturbance
+                        map before 2020.
+                      </p>
+                    </div>
+                    <div class="d-flex flex-column">
+                      <div class="d-flex align-items-center me-3">
+                        <div
+                          class="bg-secondary rounded-circle me-2"
+                          style="width: 10px; height: 10px"
+                        ></div>
+                        <span class="text-danger">High</span>
+                      </div>
+                      <p class="text-xs text-muted ms-3">
+                        plot is within mapped forest, not within any mapped
+                        commodity, and only disturbances detected after 2020
+                      </p>
+                    </div>
+                    <div class="d-flex flex-column">
+                      <div class="d-flex align-items-center me-3">
+                        <div
+                          class="bg-secondary rounded-circle me-2"
+                          style="width: 10px; height: 10px"
+                        ></div>
+                        <span class="text-info">More Info Needed</span>
+                      </div>
+                      <p class="text-xs text-muted ms-3">
+                        plots that have not been disturbed or lack other
+                        evidence to determine their risk level. This
+                        classification highlights areas that require further
+                        investigation.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="modal fade"
+    id="uploadFarmInfoModal"
+    tabindex="-1"
+    aria-labelledby="uploadFarmInfoModalLabel"
+    aria-hidden="true"
+    data-bs-backdrop="static"
+    data-bs-keyboard="false"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadFarmInfoModalLabel">
+            Upload Plot Info
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          >
+            <i class="fa fa-times text-dark-emphasis" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <em>
+            <b>Note:</b> Download the template if you are not sure of plots info
+            format to upload.
+          </em>
+          <div class="col-md-12 d-flex justify-content-center">
+            <select class="btn btn-primary btn-sm" id="templateFormat">
+              <option value="" class="btn btn-white">
+                Download Format Template
+              </option>
+              <option value="csv" class="btn btn-white">CSV Format</option>
+              <option value="geojson" class="btn btn-white">
+                GeoJSON Format
+              </option>
+            </select>
+          </div>
+          <div class="mt-3">
+            <form id="uploadForm" enctype="multipart/form-data">
+              <input
+                type="file"
+                class="form-control"
+                id="uploadFile"
+                name="file"
+                accept=".csv, .geojson"
+              />
+            </form>
+            <i class="text-xs text-muted mt-2"
+              >N.B: File should be in <b>.csv</b> or <b>.geojson</b> format.</i
+            >
+            <i class="text-xs text-muted mt-2"
+              >And Make sure to upload info within fields mentioned in the
+              template.</i
+            >
+          </div>
+          <div class="mt-3">
+            <div class="progress">
+              <div
+                class="progress-bar progress-bar-striped progress-bar-animated bg-secondary"
+                role="progressbar"
+                style="width: 100%; height: 20px"
+                aria-valuenow="100"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <span
+                  id="upload-progress-text"
+                  class="progress-text py-2 font-italic"
+                  >Wait while processing...</span
+                >
+              </div>
+            </div>
+          </div>
+          <!-- error message accordion -->
+          <div id="modal-error-container" class="container mt-4 d-none">
+            <div class="accordion" id="errorAccordion">
+              <div class="accordion-item bg-danger text-white">
+                <div
+                  id="headingOne"
+                  class="accordion-header text-white"
+                  type="button"
+                >
+                  <h5 id="headingOneErrorText">...</h5>
+                  <i
+                    id="close-error-accordion"
+                    class="fa fa-close text-white float-end"
+                  ></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+              id="closeBtn"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="saveBtn"
+              onclick="uploadData()"
+            >
+              Validate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% endblock %}
+</div>
