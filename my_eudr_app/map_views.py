@@ -60,7 +60,6 @@ def map_view(request):
         base_url = f"{request.scheme}://{request.get_host()}"
         response = requests.get(f"""{base_url}/api/farm/map/list/""") if not fileId and not farmId else requests.get(f"""{base_url}/api/farm/list/{farmId}""") if farmId else requests.get(
             f"""{base_url}/api/farm/list/file/{fileId}/""") if not overLap else requests.get(f"""{base_url}/api/farm/overlapping/{fileId}/""")
-        print(response.status_code)
         if response.status_code == 200:
             farms = [response.json()] if farmId else response.json()
             if len(farms) > 0:
@@ -154,7 +153,7 @@ def map_view(request):
                         polygon = flatten_multipolygon_coordinates(
                             farm['polygon'])
 
-                        if polygon:
+                        if farm['polygon_type'] != 'Point':
                             farm_polygon = Polygon(polygon[0])
                             is_overlapping = any(farm_polygon.overlaps(
                                 Polygon(other_farm['polygon'][0])) for other_farm in farms)
