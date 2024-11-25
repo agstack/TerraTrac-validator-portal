@@ -8,7 +8,7 @@ from eudr_backend.utils import flatten_geojson, format_geojson_data, transform_d
 
 
 # Define an async function
-async def async_create_farm_data(data, serializer, file_id, isSyncing=False, hasCreatedFiles=[]):
+async def async_create_farm_data(data, file_id, isSyncing=False, hasCreatedFiles=[]):
     errors = []
     created_data = []
 

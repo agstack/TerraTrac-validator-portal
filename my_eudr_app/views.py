@@ -45,7 +45,6 @@ def users(request):
 
     return render(request, "users.html", {"active_page": active_page, 'user': request.user})
 
-
 @login_required
 @staff_member_required(login_url='/login/')
 def backups(request):
@@ -53,14 +52,12 @@ def backups(request):
 
     return render(request, "backups.html", {"active_page": active_page, 'user': request.user})
 
-
 @login_required
 @staff_member_required(login_url='/login/')
 def backup_details(request):
     active_page = "backup_details"
 
     return render(request, "backup_details.html", {"active_page": active_page, 'user': request.user})
-
 
 @login_required
 @staff_member_required(login_url='/login/')

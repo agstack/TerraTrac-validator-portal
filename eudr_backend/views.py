@@ -1,7 +1,6 @@
 import json
 from django.http import HttpResponse
 from django.utils import timezone
-from django.core.cache import cache
 import pandas as pd
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -10,14 +9,11 @@ from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
 import boto3
 from shapely import Polygon
-
 from eudr_backend import settings
 from eudr_backend.async_tasks import async_create_farm_data
 from eudr_backend.models import EUDRCollectionSiteModel, EUDRFarmBackupModel, EUDRSharedMapAccessCodeModel, EUDRFarmModel, EUDRUploadedFilesModel, EUDRUserModel
-from eudr_backend.tasks import update_geoid
 from datetime import timedelta
-
-from eudr_backend.utils import flatten_multipolygon_coordinates, generate_access_code, transform_csv_to_json, transform_db_data_to_geojson
+from eudr_backend.utils import extract_data_from_file, flatten_multipolygon_coordinates, generate_access_code, handle_failed_file_entry, store_failed_file_in_s3, transform_csv_to_json, transform_db_data_to_geojson
 from eudr_backend.validators import validate_csv, validate_geojson
 from .serializers import (
     EUDRCollectionSiteModelSerializer,
@@ -74,20 +70,25 @@ def delete_user(request, pk):
 
 @api_view(["POST"])
 def create_farm_data(request):
-    cache.delete('high_risk_layer')
-    cache.delete('low_risk_layer')
-    cache.delete('more_info_needed_layer')
-
-    data_format = request.data.get('format')
-    raw_data = json.loads(request.data.get(
-        'data')) if isinstance(request.data.get('data'), str) else request.data.get('data')
+    data_format = request.data.get('format', "geojson") if isinstance(
+        request.data, dict) else "geojson"
+    raw_data = json.loads(request.data) if isinstance(
+        request.data, str) else request.data
     file = request.FILES.get('file')
 
-    if not file:
-        return Response({'error': 'File is required'}, status=status.HTTP_400_BAD_REQUEST)
+    # Validate that either file or raw_data is provided
+    if not file and not raw_data:
+        return Response({'error': 'Either a file or data is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    file_name = file.name.split('.')[0]
+    # Determine the data source (file or raw_data)
+    if file:
+        file_name = file.name.split('.')[0]
+        # Custom function to read data from file if needed
+        raw_data = extract_data_from_file(file, data_format)
+    else:
+        file_name = "uploaded_data"
 
+    # Validate the format
     if not data_format or not raw_data:
         return Response({'error': 'Format and data are required'}, status=status.HTTP_400_BAD_REQUEST)
     elif data_format == 'geojson':
@@ -98,61 +99,46 @@ def create_farm_data(request):
         return Response({'error': 'Unsupported format'}, status=status.HTTP_400_BAD_REQUEST)
 
     if errors:
-        # store the file in aws s3 bucket failed directory
-        s3 = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-        s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME,
-                          f'failed/{request.user.username}_{file.name}', ExtraArgs={'ACL': 'public-read'})
+        # Custom function to handle S3 upload
+        store_failed_file_in_s3(file, request.user, file_name)
         return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
 
-    raw_data = request.data.get(
-        'data') if data_format == 'geojson' else transform_csv_to_json(raw_data)
+    if data_format == 'csv':
+        raw_data = transform_csv_to_json(raw_data)
 
     serializer = EUDRFarmModelSerializer(data=request.data)
 
-    # combine file_name and format to save in the database with dummy uploaded_by. then retrieve the file_id
+    # Combine file_name and format for database entry
     file_data = {
-        "file_name": f"{file_name}.{request.data.get('format')}",
+        "file_name": f"{file_name}.{data_format}",
         "uploaded_by": request.user.username if request.user.is_authenticated else "admin",
     }
     file_serializer = EUDRUploadedFilesModelSerializer(data=file_data)
 
     if file_serializer.is_valid():
-        if not EUDRUploadedFilesModel.objects.filter(file_name=file_data["file_name"], uploaded_by=request.user.username if request.user.is_authenticated else "admin").exists():
+        if not EUDRUploadedFilesModel.objects.filter(
+            file_name=file_data["file_name"],
+            uploaded_by=request.user.username if request.user.is_authenticated else "admin"
+        ).exists():
             file_serializer.save()
         file_id = EUDRUploadedFilesModel.objects.get(
-            file_name=file_data["file_name"], uploaded_by=request.user.username if request.user.is_authenticated else "admin").id
+            file_name=file_data["file_name"],
+            uploaded_by=request.user.username if request.user.is_authenticated else "admin"
+        ).id
+
+        errors, _ = async_to_sync(async_create_farm_data)(
+            raw_data, file_id)
+        if errors:
+            # Custom function to handle failed file entries
+            handle_failed_file_entry(file_serializer, file, request.user)
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     else:
-        EUDRUploadedFilesModel.objects.get(
-            id=file_serializer.data.get("id")).delete()
-        # store the file in aws s3 bucket failed directory
-        s3 = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-        s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME,
-                          f'failed/{request.user.username}_{file.name}', ExtraArgs={'ACL': 'public-read'})
-        return Response({'errors': file_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        # Custom function to handle failed file entries
+        handle_failed_file_entry(file_serializer, file, request.user)
+        return Response({'error': 'File serialization failed'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Call the async function from sync context
-    errors, created_data = async_to_sync(async_create_farm_data)(
-        raw_data, serializer, file_id)
-    if errors:
-        # delete the file if there are errors
-        EUDRUploadedFilesModel.objects.get(id=file_id).delete()
-        # store the file in aws s3 bucket failed directory
-        s3 = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-        s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME,
-                          f'failed/{request.user.username}_{file.name}', ExtraArgs={'ACL': 'public-read'})
-        return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
-    update_geoid(repeat=60,
-                 user_id=request.user.username if request.user.is_authenticated else "admin")
-
-    # store the file in aws s3 bucket processed directory
-    s3 = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                      aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-    s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME,
-                      f'processed/{request.user.username}_{file.name}', ExtraArgs={'ACL': 'public-read'})
-    return Response(created_data, status=status.HTTP_201_CREATED)
+    # Proceed with other operations...
+    return Response({'message': 'File/data processed successfully', 'file_id': file_id}, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -222,9 +208,6 @@ def restore_farm_data(request):
 
 @api_view(["PUT"])
 def update_farm_data(request, pk):
-    cache.delete('high_risk_layer')
-    cache.delete('low_risk_layer')
-    cache.delete('more_info_needed_layer')
     farm_data = EUDRFarmModel.objects.get(id=pk)
     serializer = EUDRFarmModelSerializer(instance=farm_data, data=request.data)
 
@@ -235,25 +218,32 @@ def update_farm_data(request, pk):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET"])
-def revalidate_farm_data(request, pk):
+@api_view(["POST"])
+def revalidate_farm_data(request):
+    file_id = request.data.get("file_id")
+
+    # if file_id is not provided, return an error
+    if not file_id:
+        return Response({'error': 'File ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
     # get all the data belonging to the file_ids
     data = EUDRFarmModel.objects.filter(
-        file_id=pk
-    ).order_by("-updated_at")
+        file_id=file_id).order_by("-updated_at")
     serializer = EUDRFarmModelSerializer(data, many=True)
 
     # format the data to geojson format and send to whisp API for processing
     raw_data = transform_db_data_to_geojson(serializer.data)
 
     # combine file_name and format to save in the database with dummy uploaded_by. then retrieve the file_id
-
-    errors, created_data = async_to_sync(async_create_farm_data)(
-        raw_data, serializer, pk)
-    if errors:
-        # delete the file if there are errors
-        EUDRUploadedFilesModel.objects.get(id=pk).delete()
-        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+    if (serializer.data):
+        errors, created_data = async_to_sync(async_create_farm_data)(
+            raw_data, file_id)
+        if errors:
+            # delete the file if there are errors
+            EUDRUploadedFilesModel.objects.get(id=file_id).delete()
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({'error': 'No data found'}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response(created_data, status=status.HTTP_201_CREATED)
 
@@ -430,8 +420,13 @@ def retrieve_file(request, pk):
 
 @api_view(["GET"])
 def download_template(request):
-    format_val = request.GET.urlencode().split("%3D")[1]
-    format = format_val.split("=")[0]
+    query_dict = request.GET
+    format_key = next(iter(query_dict.keys()), None)
+
+    if not format_key or '=' not in format_key:
+        return Response({"error": "Format parameter is missing or incorrect"}, status=400)
+
+    format = format_key.split('=')[1]
 
     # Create a sample template dataframe
     data = {
