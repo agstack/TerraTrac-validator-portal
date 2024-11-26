@@ -469,6 +469,17 @@
       src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
     ></script>
     <!-- Custom JS -->
+    <script>
+      const mapViewUrl = "{% url 'map_view' %}";
+      const mapUrl = "{% url 'map' %}";
+      const mapShareUrl = "{% url 'map_share' %}";
+      const validatorUrl = "{% url 'validator' %}";
+      const validatedFilesUrl = "{% url 'validated_files' %}";
+      const usersUrl = "{% url 'users' %}";
+      const backupsUrl = "{% url 'backups' %}";
+      const backupDetailsUrl = "{% url 'backup_details' %}";
+      const profileUrl = "{% url 'profile' %}";
+    </script>
     <script src="{% static 'assets/js/custom.js' %}"></script>
   </body>
 </html>

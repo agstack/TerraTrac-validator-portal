@@ -26,7 +26,7 @@ document.getElementById("logout").addEventListener("click", function (event) {
 });
 
 document.getElementById("profile").addEventListener("click", function () {
-  window.location.href = "{% url 'profile' %}";
+  window.location.href = profileUrl;
 });
 
 var win = navigator.platform.indexOf("Win") > -1;
@@ -1069,9 +1069,9 @@ function generateData(farmData, farmsContainer) {
               ).toDateString()}</p>
             </td>
             <td class="align-middle text-center">
-              <a href="{% url 'map' %}?farm-id=${
-                farmData[i].id
-              }" class="text-primary font-weight-bold text-lg" title="View on Map"><i class="bi bi-cursor"></i></a>
+              <a href="${mapUrl}?farm-id=${
+      farmData[i].id
+    }" class="text-primary font-weight-bold text-lg" title="View on Map"><i class="bi bi-cursor"></i></a>
             </td>
         `;
     farmsContainer.appendChild(tr);
@@ -1149,13 +1149,13 @@ fetch("/api/files/list/")
                   </td>
                   <td>
                     <a
-                      href="{% url 'validator' %}?file-id=${data[i].id}"
+                      href="${validatorUrl}?file-id=${data[i].id}"
                       class="text-primary font-weight-bold text-lg me-3"
                       title="View List of Plots"
                       ><i class="bi bi-list"></i></a
                     >
                     <a
-                      href="{% url 'map' %}?file-id=${data[i].id}"
+                      href="${mapUrl}?file-id=${data[i].id}"
                       class="text-primary font-weight-bold text-lg"
                       title="View on Map"
                       ><i class="bi bi-cursor"></i></a
@@ -1334,7 +1334,7 @@ fetch("/api/users/")
               </td>
               <td class="d-flex justify-content-center gap-3">
                 <a
-                  href="{% url 'validator' %}?user-id=${data[i].id}"
+                  href="${validatorUrl}?user-id=${data[i].id}"
                   class="text-primary font-weight-bold text-lg"
                   title="View User List of Plots"
                   ><i class="bi bi-list"></i></a
@@ -1362,7 +1362,7 @@ fetch("/api/users/")
         i++;
       }
 
-      $("#files").DataTable({
+      $("#users").DataTable({
         language: {
           //customize pagination prev and next buttons: use arrows instead of words
           paginate: {
@@ -1450,7 +1450,7 @@ fetch("/api/collection_sites/list")
               ).toLocaleString()}</p>
             </td>
             <td class="align-middle text-center">
-              <a href="{% url 'backup_details' %}?cs-id=${
+              <a href="${backupDetailsUrl}?cs-id=${
                 data[i].id
               }" class="text-primary font-weight-bold text-lg" title="View Details"><i class="bi bi-list"></i></a>
             </td>
@@ -1601,55 +1601,53 @@ if (queryParams.get("cs-id")) {
     });
 }
 
-$(window).on("load", function () {
-  if (window.location.pathname === "/map/") {
-    $("#loader-container").show();
+if (window.location.pathname === "/map/") {
+  $("#loader-container").show();
 
-    const queryParams = new URLSearchParams(window.location.search);
-    const fileId = queryParams.get("file-id");
-    const farmId = queryParams.get("farm-id");
-    const lat = queryParams.get("lat");
-    const lon = queryParams.get("lon");
+  const queryParams = new URLSearchParams(window.location.search);
+  const fileId = queryParams.get("file-id");
+  const farmId = queryParams.get("farm-id");
+  const lat = queryParams.get("lat");
+  const lon = queryParams.get("lon");
 
-    $.ajax({
-      url: "{% url 'map_view' %}",
-      dataType: "json",
-      data: {
-        "file-id": fileId,
-        "farm-id": farmId,
-        lat: lat,
-        lon: lon,
-      },
-      success: function (data) {
-        if (data.error) {
-          Toastify({
-            text: data.error,
-            duration: 3000,
-            close: true,
-            gravity: "top",
-            position: "right",
-            backgroundColor: "red",
-          }).showToast();
-        } else {
-          $("#mapMonde").html(data.map_html);
-          document.querySelector(".floating-share").classList.remove("d-none");
-        }
-        $("#loader-container").hide();
-      },
-      error: function () {
+  $.ajax({
+    url: mapViewUrl,
+    dataType: "json",
+    data: {
+      "file-id": fileId,
+      "farm-id": farmId,
+      lat: lat,
+      lon: lon,
+    },
+    success: function (data) {
+      if (data.error) {
         Toastify({
-          text: "Error loading map data.",
+          text: data.error,
           duration: 3000,
           close: true,
           gravity: "top",
           position: "right",
           backgroundColor: "red",
         }).showToast();
-        $("#loader-container").hide();
-      },
-    });
-  }
-});
+      } else {
+        $("#mapMonde").html(data.map_html);
+        document.querySelector(".floating-share").classList.remove("d-none");
+      }
+      $("#loader-container").hide();
+    },
+    error: function () {
+      Toastify({
+        text: "Error loading map data.",
+        duration: 3000,
+        close: true,
+        gravity: "top",
+        position: "right",
+        backgroundColor: "red",
+      }).showToast();
+      $("#loader-container").hide();
+    },
+  });
+}
 
 // Share map logic
 if (document.querySelector(".floating-share .fa-share-alt")) {
@@ -1722,7 +1720,7 @@ if (document.querySelector(".floating-share .fa-share-alt")) {
     let shareUrl = null;
 
     await $.ajax({
-      url: "{% url 'map_share' %}",
+      url: mapShareUrl,
       dataType: "json",
       method: "POST",
       headers: {
@@ -1771,4 +1769,40 @@ if (urlParams.get("open-uploader") === "true") {
     }
   );
   myModal.show();
+}
+
+if (window.location.pathname === "/map/share/") {
+  $("#loader-container").show();
+
+  const queryParams = new URLSearchParams(window.location.search);
+  const fileId = queryParams.get("file-id");
+  const accessCode = queryParams.get("access-code");
+
+  $.ajax({
+    url: mapViewUrl,
+    dataType: "json",
+    data: {
+      "file-id": fileId,
+      "access-code": accessCode,
+    },
+    success: function (data) {
+      if (data.error) {
+        $("#error-container").removeClass("d-none");
+        $("#error-container .message-subtitle").text(data.error);
+      } else if (data?.status === 403) {
+        $("#error-container").removeClass("d-none");
+        $("#error-container .message-subtitle").text(data.message);
+      } else {
+        $("#mapMonde").html(data.map_html);
+      }
+      $("#loader-container").hide();
+    },
+    error: function (error) {
+      $("#loader-container").hide();
+      $("#error-container").removeClass("d-none");
+      $("#error-container .message-subtitle").text(
+        "An error occurred while loading the map"
+      );
+    },
+  });
 }
