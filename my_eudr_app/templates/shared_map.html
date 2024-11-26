@@ -166,46 +166,7 @@
     ></script>
     <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
     <script src="{% static 'assets/js/argon-dashboard.js' %}"></script>
-
-    <script>
-      $(window).on("load", function () {
-        if (window.location.pathname === "/map/share/") {
-          $("#loader-container").show();
-
-          const queryParams = new URLSearchParams(window.location.search);
-          const fileId = queryParams.get("file-id");
-          const accessCode = queryParams.get("access-code");
-
-          $.ajax({
-            url: "{% url 'map_view' %}",
-            dataType: "json",
-            data: {
-              "file-id": fileId,
-              "access-code": accessCode,
-            },
-            success: function (data) {
-              if (data.error) {
-                $("#error-container").removeClass("d-none");
-                $("#error-container .message-subtitle").text(data.error);
-              } else if (data?.status === 403) {
-                $("#error-container").removeClass("d-none");
-                $("#error-container .message-subtitle").text(data.message);
-              } else {
-                $("#mapMonde").html(data.map_html);
-              }
-              $("#loader-container").hide();
-            },
-            error: function (error) {
-              $("#loader-container").hide();
-              $("#error-container").removeClass("d-none");
-              $("#error-container .message-subtitle").text(
-                "An error occurred while loading the map"
-              );
-            },
-          });
-        }
-      });
-    </script>
+    <script src="{% static 'assets/js/custom.js' %}"></script>
   </body>
 </html>
 
