@@ -90,6 +90,10 @@
           <form method="POST">
             <div class="d-flex flex-column align-items-center">
               {% csrf_token %}
+              <!-- error container -->
+              {% if messages %} {% for message in messages %}
+              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+              {% endfor %} {% endif %}
               <div class="form-group">
                 <label for="id_username">Email</label>
                 <input
@@ -99,11 +103,6 @@
                   class="form-control {% if messages %}is-invalid{% endif %}"
                   required
                 />
-                {% if messages %}
-                <div class="invalid-feedback">
-                  {% for message in messages %} {{ message }} {% endfor %}
-                </div>
-                {% endif %}
               </div>
 
               <!-- Password Field -->

@@ -1,3 +1,6 @@
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import redirect, render
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -36,6 +39,8 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             return redirect('index')
+        else:
+            messages.error(request, 'Invalid username or password.')
     else:
         form = AuthenticationForm()
     return render(request, 'auth/login.html', {'form': form})
