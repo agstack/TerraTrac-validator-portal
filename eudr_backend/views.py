@@ -13,6 +13,7 @@ from eudr_backend import settings
 from eudr_backend.async_tasks import async_create_farm_data
 from eudr_backend.models import EUDRCollectionSiteModel, EUDRFarmBackupModel, EUDRSharedMapAccessCodeModel, EUDRFarmModel, EUDRUploadedFilesModel
 from datetime import timedelta
+from eudr_backend.tasks import update_geoid
 from eudr_backend.utils import extract_data_from_file, flatten_multipolygon_coordinates, generate_access_code, handle_failed_file_entry, store_failed_file_in_s3, transform_csv_to_json, transform_db_data_to_geojson
 from eudr_backend.validators import validate_csv, validate_geojson
 from .serializers import (
@@ -138,6 +139,8 @@ def create_farm_data(request):
         return Response({'error': 'File serialization failed'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Proceed with other operations...
+    update_geoid(repeat=60,
+                 user_id=request.user.username if request.user.is_authenticated else "admin")
     return Response({'message': 'File/data processed successfully', 'file_id': file_id}, status=status.HTTP_201_CREATED)
 
 
