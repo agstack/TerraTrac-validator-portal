@@ -9,7 +9,6 @@ from django.contrib.auth.models import User
 from rest_framework import status
 
 from eudr_backend.models import (
-    EUDRUserModel,
     EUDRFarmModel,
     EUDRFarmBackupModel,
     EUDRCollectionSiteModel,
@@ -25,12 +24,6 @@ class ViewsTestCase(TestCase):
         self.user = User.objects.create_user(
             username='johndoe', password='12345')
         self.client.login(username='testuser', password='12345')
-        self.eudr_user = EUDRUserModel.objects.create(
-            first_name="John",
-            last_name="Doe",
-            username=self.user.username,
-            password=self.user.password,
-        )
         self.file = EUDRUploadedFilesModel.objects.create(
             file_name='test.csv', uploaded_by='testuser')
         self.farm = EUDRFarmModel.objects.create(

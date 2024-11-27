@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import EUDRCollectionSiteModel, EUDRFarmBackupModel, EUDRFarmModel, EUDRSharedMapAccessCodeModel, EUDRUploadedFilesModel, EUDRUserModel
+from .models import EUDRCollectionSiteModel, EUDRFarmBackupModel, EUDRFarmModel, EUDRSharedMapAccessCodeModel, EUDRUploadedFilesModel
 from django.contrib.auth.models import User
 
 
