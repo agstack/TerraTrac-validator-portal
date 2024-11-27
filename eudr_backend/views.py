@@ -11,7 +11,7 @@ import boto3
 from shapely import Polygon
 from eudr_backend import settings
 from eudr_backend.async_tasks import async_create_farm_data
-from eudr_backend.models import EUDRCollectionSiteModel, EUDRFarmBackupModel, EUDRSharedMapAccessCodeModel, EUDRFarmModel, EUDRUploadedFilesModel, EUDRUserModel
+from eudr_backend.models import EUDRCollectionSiteModel, EUDRFarmBackupModel, EUDRSharedMapAccessCodeModel, EUDRFarmModel, EUDRUploadedFilesModel
 from datetime import timedelta
 from eudr_backend.utils import extract_data_from_file, flatten_multipolygon_coordinates, generate_access_code, handle_failed_file_entry, store_failed_file_in_s3, transform_csv_to_json, transform_db_data_to_geojson
 from eudr_backend.validators import validate_csv, validate_geojson
@@ -44,14 +44,14 @@ def retrieve_users(request):
 
 @api_view(["GET"])
 def retrieve_user(request, pk):
-    user = EUDRUserModel.objects.get(id=pk)
+    user = User.objects.get(id=pk)
     serializer = EUDRUserModelSerializer(user, many=False)
     return Response(serializer.data)
 
 
 @api_view(["PUT"])
 def update_user(request, pk):
-    user = EUDRUserModel.objects.get(id=pk)
+    user = User.objects.get(id=pk)
     serializer = EUDRUserModelSerializer(instance=user, data=request.data)
 
     if serializer.is_valid():
@@ -63,7 +63,7 @@ def update_user(request, pk):
 
 @api_view(["DELETE"])
 def delete_user(request, pk):
-    user = EUDRUserModel.objects.get(id=pk)
+    user = User.objects.get(id=pk)
     user.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
