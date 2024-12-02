@@ -23,8 +23,35 @@ from .serializers import (
     EUDRUploadedFilesModelSerializer,
     EUDRUserModelSerializer,
 )
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Create a new user",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+            "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+            "username": openapi.Schema(type=openapi.TYPE_STRING),
+            "password": openapi.Schema(type=openapi.TYPE_STRING),
+            "email": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        default={
+            "first_name": "John",
+            "last_name": "Doe",
+            "username": "johndoe",
+            "password": "password",
+            "email": "johndoe@gmail.com",
+        },
+    ),
+    responses={
+        201: "User created successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["POST"])
 def create_user(request):
     serializer = EUDRUserModelSerializer(data=request.data)
@@ -36,6 +63,13 @@ def create_user(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve all users",
+    responses={
+        200: "Users retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_users(request):
     data = User.objects.all().order_by("-date_joined")
@@ -43,6 +77,13 @@ def retrieve_users(request):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve a user",
+    responses={
+        200: "User retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_user(request, pk):
     user = User.objects.get(id=pk)
@@ -50,6 +91,29 @@ def retrieve_user(request, pk):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="put",
+    operation_summary="Update a user",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+            "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+            "username": openapi.Schema(type=openapi.TYPE_STRING),
+            "email": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        default={
+            "first_name": "John",
+            "last_name": "Doe",
+            "username": "johndoe",
+            "email": "johndoes@gmail.com",
+        },
+    ),
+    responses={
+        200: "User updated successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["PUT"])
 def update_user(request, pk):
     user = User.objects.get(id=pk)
@@ -62,6 +126,13 @@ def update_user(request, pk):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method="delete",
+    operation_summary="Delete a user",
+    responses={
+        204: "User deleted successfully",
+    }
+)
 @api_view(["DELETE"])
 def delete_user(request, pk):
     user = User.objects.get(id=pk)
@@ -69,6 +140,15 @@ def delete_user(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Create farm data",
+    request_body=EUDRFarmModelSerializer,
+    responses={
+        201: "Farm data created successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["POST"])
 def create_farm_data(request):
     data_format = request.data.get('format', "geojson") if isinstance(
@@ -144,6 +224,80 @@ def create_farm_data(request):
     return Response({'message': 'File/data processed successfully', 'file_id': file_id}, status=status.HTTP_201_CREATED)
 
 
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Sync farm data",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_ARRAY,
+        items=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "device_id": openapi.Schema(type=openapi.TYPE_STRING),
+                "collection_site": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "phone_number": openapi.Schema(type=openapi.TYPE_STRING),
+                        "email": openapi.TYPE_STRING,
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+                "farms": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "remote_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                            "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                            "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                            "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                            "polygon": openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_ARRAY,
+                                    items=openapi.Schema(
+                                        type=openapi.TYPE_NUMBER)
+                                )
+                            ),
+                            "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            },
+            default={
+                "device_id": "device_1",
+                "collection_site": {
+                    "name": "Site A",
+                    "phone_number": "1234567890",
+                    "email": "janedoe@gmail.com",
+                    "latitude": "-1.62883139933721",
+                    "longitude": "29.9898212498949",
+                },
+                "farms": [
+                    {
+                        "remote_id": "farm_1",
+                        "farmer_name": "John Doe",
+                        "farm_size": 4,
+                        "farm_village": "Village A",
+                        "farm_district": "District A",
+                        "latitude": "-1.62883139933721",
+                        "longitude": "29.9898212498949",
+                        "polygon": [[41.8781, 87.6298], [41.8781, 87.6299]],
+                        "polygon_type": "Polygon",
+                    },
+                ],
+            },
+        ),
+    ),
+    responses={
+        200: "Farm data synced successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["POST"])
 def sync_farm_data(request):
     sync_results = []
@@ -170,6 +324,26 @@ def sync_farm_data(request):
     return Response({"synced_remote_ids": sync_results}, status=status.HTTP_200_OK)
 
 
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Restore farm data",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "device_id": openapi.Schema(type=openapi.TYPE_STRING),
+            "phone_number": openapi.Schema(type=openapi.TYPE_STRING),
+            "email": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        default={
+            "device_id": "device_1",
+            "phone_number": "1234567890",
+            "email": "mamadoe@gmail.com",
+        },
+    ),
+    responses={
+        200: "Farm data restored successfully",
+    }
+)
 @api_view(["POST"])
 def restore_farm_data(request):
     device_id = request.data.get("device_id")
@@ -209,6 +383,15 @@ def restore_farm_data(request):
     return Response(restore_data, status=status.HTTP_200_OK)
 
 
+@swagger_auto_schema(
+    method="put",
+    operation_summary="Update farm data",
+    request_body=EUDRFarmModelSerializer,
+    responses={
+        200: "Farm data updated successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["PUT"])
 def update_farm_data(request, pk):
     farm_data = EUDRFarmModel.objects.get(id=pk)
@@ -221,6 +404,20 @@ def update_farm_data(request, pk):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Revalidate farm data",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "file_id": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+    ),
+    responses={
+        201: "Farm data revalidated successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["POST"])
 def revalidate_farm_data(request):
     file_id = request.data.get("file_id")
@@ -251,6 +448,13 @@ def revalidate_farm_data(request):
     return Response(created_data, status=status.HTTP_201_CREATED)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve farm data",
+    responses={
+        200: "Farm data retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_farm_data(request):
     files = EUDRUploadedFilesModel.objects.filter(
@@ -267,6 +471,13 @@ def retrieve_farm_data(request):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve overlapping farm data",
+    responses={
+        200: "Overlapping farm data retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_overlapping_farm_data(request, pk):
     files = EUDRUploadedFilesModel.objects.filter(
@@ -299,6 +510,13 @@ def retrieve_overlapping_farm_data(request, pk):
     return Response(overLaps)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve user farm data",
+    responses={
+        200: "User farm data retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_user_farm_data(request, pk):
     users = User.objects.filter(id=pk)
@@ -316,6 +534,13 @@ def retrieve_user_farm_data(request, pk):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve all synced farm data",
+    responses={
+        200: "All synced farm data retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_all_synced_farm_data(request):
     data = EUDRFarmBackupModel.objects.all().order_by("-updated_at")
@@ -325,6 +550,13 @@ def retrieve_all_synced_farm_data(request):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve all synced farm data by collection site",
+    responses={
+        200: "All synced farm data by collection site retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_all_synced_farm_data_by_cs(request, pk):
     data = EUDRFarmBackupModel.objects.filter(
@@ -336,6 +568,13 @@ def retrieve_all_synced_farm_data_by_cs(request, pk):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve collection sites",
+    responses={
+        200: "Collection sites retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_collection_sites(request):
     data = EUDRCollectionSiteModel.objects.all().order_by("-updated_at")
@@ -345,6 +584,13 @@ def retrieve_collection_sites(request):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve map data",
+    responses={
+        200: "Map data retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_map_data(request):
     files = EUDRUploadedFilesModel.objects.filter(
@@ -361,6 +607,13 @@ def retrieve_map_data(request):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve farm detail",
+    responses={
+        200: "Farm detail retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_farm_detail(request, pk):
     data = EUDRFarmModel.objects.get(id=pk)
@@ -368,6 +621,13 @@ def retrieve_farm_detail(request, pk):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve farm data from file ID",
+    responses={
+        200: "Farm data retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_farm_data_from_file_id(request, pk):
     data = EUDRFarmModel.objects.filter(file_id=pk)
@@ -375,6 +635,13 @@ def retrieve_farm_data_from_file_id(request, pk):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve files",
+    responses={
+        200: "Files retrieved successfully",
+    }
+)
 @api_view(["GET"])
 def retrieve_files(request):
     data = None
@@ -389,38 +656,68 @@ def retrieve_files(request):
     return Response(serializer.data)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve all files",
+    responses={
+        200: "All files retrieved successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["GET"])
 def retrieve_s3_files(request):
-    # Retrieve all files from all directories in the S3 bucket
-    s3 = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                      aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-    response = s3.list_objects_v2(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
-    # get file urls and date uploaded
-    files = []
-    count = 0
-    for content in response.get('Contents', []):
-        file = {
-            'id': count,
-            'file_name': content.get('Key').split("/")[1].split("_", 1)[1],
-            'last_modified': content.get('LastModified'),
-            'size': content.get('Size') / 1024,
-            'url': f"{settings.AWS_S3_BASE_URL}{content.get('Key')}",
-            'uploaded_by': content.get('Key').split("/")[1].split("_")[0],
-            'category': content.get('Key').split("/")[0],
-        }
-        files.append(file)
-        count += 1
+    try:
+        # Retrieve all files from all directories in the S3 bucket
+        s3 = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+        response = s3.list_objects_v2(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
+        # get file urls and date uploaded
+        files = []
+        count = 0
+        for content in response.get('Contents', []):
+            file = {
+                'id': count,
+                'file_name': content.get('Key').split("/")[1].split("_", 1)[1],
+                'last_modified': content.get('LastModified'),
+                'size': content.get('Size') / 1024,
+                'url': f"{settings.AWS_S3_BASE_URL}{content.get('Key')}",
+                'uploaded_by': content.get('Key').split("/")[1].split("_")[0],
+                'category': content.get('Key').split("/")[0],
+            }
+            files.append(file)
+            count += 1
 
-    return Response(files)
+        return Response(files)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Retrieve file",
+    responses={
+        200: "File retrieved successfully",
+        404: "File not found",
+    }
+)
 @api_view(["GET"])
 def retrieve_file(request, pk):
-    data = EUDRUploadedFilesModel.objects.get(id=pk)
-    serializer = EUDRUploadedFilesModelSerializer(data, many=False)
-    return Response(serializer.data)
+    try:
+        data = EUDRUploadedFilesModel.objects.get(id=pk)
+        serializer = EUDRUploadedFilesModelSerializer(data, many=False)
+        return Response(serializer.data)
+    except EUDRUploadedFilesModel.DoesNotExist:
+        return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+@swagger_auto_schema(
+    method="get",
+    operation_summary="Download template file",
+    responses={
+        200: "Template file downloaded successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["GET"])
 def download_template(request):
     query_dict = request.GET
@@ -489,6 +786,20 @@ def download_template(request):
     return response
 
 
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Generate map link",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "file-id": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+    ),
+    responses={
+        200: "Map link generated successfully",
+        400: "Bad request",
+    }
+)
 @api_view(["POST"])
 def generate_map_link(request):
     fileId = request.data.get("file-id")

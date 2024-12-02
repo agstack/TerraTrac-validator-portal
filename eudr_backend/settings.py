@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "background_task",
     "storages",
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [

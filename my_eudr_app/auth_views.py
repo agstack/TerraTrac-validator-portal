@@ -14,39 +14,125 @@ from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from django.urls import reverse
 from django.conf import settings
+from rest_framework.decorators import api_view
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from rest_framework import status
+from rest_framework.response import Response
 
 
+@swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+    'first_name': openapi.Schema(type=openapi.TYPE_STRING, description='First Name'),
+    'last_name': openapi.Schema(type=openapi.TYPE_STRING, description='Last Name'),
+    'username': openapi.Schema(type=openapi.TYPE_STRING, description='Username'),
+    'password1': openapi.Schema(type=openapi.TYPE_STRING, description='Password'),
+    'password2': openapi.Schema(type=openapi.TYPE_STRING, description='Password Confirmation')
+}, default={'first_name': 'John', 'last_name': 'Doe', 'username': 'johndoe@gmail.com', 'password1': 'password', 'password2': 'password'}))
+@api_view(['GET', 'POST'])
 def signup_view(request):
+    """
+    Handle user signup for both HTML rendering and API requests.
+    """
+    if request.method == 'GET':
+        # Render the signup HTML template for GET requests
+        form = UserCreationForm()
+        return render(request, 'auth/signup.html', {'form': form})
+
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        # Determine request type
+        data = request.data if request.content_type == 'application/json' else request.POST
+        form = UserCreationForm(data)
         if form.is_valid():
             user = form.save(commit=False)
-            user.first_name = request.POST.get('first_name')
-            user.last_name = request.POST.get('last_name')
-            user.email = request.POST.get('username')
+            user.first_name = data.get('first_name', '')
+            user.last_name = data.get('last_name', '')
+            user.email = data.get('username', '')
             user.save()
-            login(request, user)
-            return redirect('index')
-    else:
-        form = UserCreationForm()
-    return render(request, 'auth/signup.html', {'form': form})
+
+            if request.content_type == 'application/json':
+                return Response({
+                    "message": "Signup successful",
+                    "user": {"username": user.username}
+                }, status=status.HTTP_201_CREATED)
+            else:
+                login(request, user)
+                return redirect('index')
+        else:
+            if request.content_type == 'application/json':
+                return Response({
+                    "message": "Signup failed",
+                    "errors": form.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                messages.error(request, form.errors)
+                return render(request, 'auth/signup.html', {'form': form, 'errors': form.errors})
 
 
+@swagger_auto_schema(
+    method='post',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'username': openapi.Schema(type=openapi.TYPE_STRING, description='Username'),
+            'password': openapi.Schema(type=openapi.TYPE_STRING, description='Password')
+        },
+        required=['username', 'password'],
+        default={'username': 'johndoe', 'password': 'password'}
+    ),
+    responses={
+        200: "Login successful",
+        400: "Invalid username or password",
+    }
+)
+@api_view(['GET', 'POST'])
 def login_view(request):
+    if request.method == 'GET':
+        # Render the login HTML template for GET requests
+        form = AuthenticationForm()
+        return render(request, 'auth/login.html', {'form': form})
+
     if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
+        # Handle form submission for POST requests
+        if request.content_type == 'application/json':
+            # JSON API request
+            form = AuthenticationForm(request, data=request.data)
+        else:
+            # Form submission (HTML POST)
+            form = AuthenticationForm(request, data=request.POST)
+
         if form.is_valid():
             user = form.get_user()
-            login(request, user)
-            return redirect('index')
+            if request.content_type == 'application/json':
+                # Respond with JSON for API requests
+                return Response({
+                    "message": "Login successful",
+                    "user": {
+                        "username": user.username
+                    }
+                }, status=status.HTTP_200_OK)
+            else:
+                login(request, user)
+                # Redirect or render another page for HTML form submission
+                return redirect('index')
         else:
-            messages.error(request, 'Invalid username or password.')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'auth/login.html', {'form': form})
+            if request.content_type == 'application/json':
+                # Respond with JSON for invalid API request
+                return Response({
+                    "message": "Invalid username or password"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                messages.error(request, 'Invalid username or password')
+                # Re-render the login page with form errors for HTML
+                return render(request, 'auth/login.html', {'form': form})
 
 
 @login_required
+@swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+    'first_name': openapi.Schema(type=openapi.TYPE_STRING, description='First Name'),
+    'last_name': openapi.Schema(type=openapi.TYPE_STRING, description='Last Name'),
+    'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email')
+}, default={'first_name': 'John', 'last_name': 'Doe', 'email': 'johndoes@gmail.com'}))
+@api_view(['POST'])
 def change_password(request):
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
@@ -64,12 +150,17 @@ def change_password(request):
     return render(request, 'change_password.html', {'form': form})
 
 
+@login_required
 def logout_view(request):
     if request.method == 'POST':
         logout(request)
         return redirect('login')
 
 
+@swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+    'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email')
+}, default={'email': 'johndoe@gmail.com'}))
+@api_view(['POST'])
 def password_reset_request(request):
     if request.method == "POST":
         password_reset_form = PasswordResetForm(request.POST)
@@ -105,6 +196,8 @@ def password_reset_request(request):
     return render(request, "auth/password_reset.html", {"form": password_reset_form})
 
 
+@swagger_auto_schema(method='get')
+@api_view(['GET'])
 def password_reset_confirm(request, uidb64=None, token=None):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
