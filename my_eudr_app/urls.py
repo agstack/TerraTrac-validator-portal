@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import index
-from my_eudr_app import auth_views, views
+from my_eudr_app import auth_views
 
 urlpatterns = [
     path("", index),

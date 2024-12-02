@@ -90,6 +90,10 @@
           <form method="POST">
             <div class="d-flex flex-column align-items-center">
               {% csrf_token %}
+              <!-- error container -->
+              {% if messages %} {% for message in messages %}
+              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+              {% endfor %} {% endif %}
               <!-- First Name -->
               <div class="form-group">
                 <label for="id_first_name">First Name</label>
