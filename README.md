@@ -25,43 +25,32 @@ To get started with the project, ensure you have the following installed:
 1. `git clone https://github.com/TechnoServe/TerraTrac-Validation-Portal.git`
 2. `cd TerraTrac-Validation-Portal`
 3. `python3 -m venv venv`
-4. `source venv/bin/activate` # On Windows use \`venv\\Scripts\\activate\`
+4. `source venv/bin/activate` # On Windows use `venv\\Scripts\\activate\`
 5. `pip install -r requirements.txt`
 
 ### Update the DATABASES section in eudr_backend/settings.py to match your local or production database setup (PostgreSQL or SQLite)
 
-   `python manage.py migrate`
+`python manage.py migrate`
 
 ### Create a .env file in the project root and add your environment variables
 
-   `AGSTACK_API_EMAIL=`
-   `AGSTACK_API_PASSWORD=`
-   `EMAIL_HOST_USER=`
-   `EMAIL_HOST_PASSWORD=`
-   `EMAIL_HOST_DEFAULT_USER=`
-   `AWS_ACCESS_KEY_ID=`
-   `AWS_SECRET_ACCESS_KEY=`
-   `AWS_STORAGE_BUCKET_NAME=`
-   `AWS_S3_REGION_NAME=`
+`AGSTACK_API_EMAIL=`
+`AGSTACK_API_PASSWORD=`
+`EMAIL_HOST_USER=`
+`EMAIL_HOST_PASSWORD=`
+`EMAIL_HOST_DEFAULT_USER=`
+`AWS_ACCESS_KEY_ID=`
+`AWS_SECRET_ACCESS_KEY=`
+`AWS_STORAGE_BUCKET_NAME=`
+`AWS_S3_REGION_NAME=`
 
 ### Run the development server
 
-   `python manage.py runserver`
+`python manage.py runserver`
 
 ## API Documentation
 
-The app provides a RESTful API for collecting, processing, and retrieving data.
-
-- **Upload Data**:
-
-  - Endpoint: /api/farm/add/
-  - Method: POST
-
-- **Get Processed Data**:
-
-  - Endpoint: /api/farm/list/
-  - Method: GET
-  - Response: JSON of processed farm data
+The API documentation is available at `/swagger` endpoint. You can access the API documentation by running the development server and visiting the URLs in your browser.
 
 ## Running Tests
 
