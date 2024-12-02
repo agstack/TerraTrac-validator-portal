@@ -22,8 +22,8 @@ class ViewsTestCase(TestCase):
     def setUp(self):
         self.client = Client()
         self.user = User.objects.create_user(
-            username='johndoe', password='12345')
-        self.client.login(username='testuser', password='12345')
+            username='testuser', password='password123')
+        self.client.login(username='testuser', password='password123')
         self.file = EUDRUploadedFilesModel.objects.create(
             file_name='test.csv', uploaded_by='testuser')
         self.farm = EUDRFarmModel.objects.create(
@@ -43,11 +43,145 @@ class ViewsTestCase(TestCase):
             name='Test Site', device_id='12345')
         self.farm_backup = EUDRFarmBackupModel.objects.create(
             remote_id='1', site_id=self.collection_site)
+        self.login_url = reverse("login")
+        self.signup_url = reverse("signup")
+
+    def test_get_request_returns_signup_template(self):
+        """Test that a GET request renders the signup HTML template."""
+        response = self.client.get(self.signup_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "auth/signup.html")
+
+    def test_post_request_valid_data_html(self):
+        """Test that a POST request with valid data creates a user and redirects for HTML."""
+        response = self.client.post(reverse("signup"), {
+            "first_name": "John",
+            "last_name": "Doe",
+            "username": "johndoe@gmail.com",
+            "password1": "Ras34@@sd!cx",
+            "password2": "Ras34@@sd!cx"
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, "/")
+        self.assertTrue(User.objects.filter(
+            username="johndoe@gmail.com").exists())
+
+    def test_post_request_invalid_data_html(self):
+        """Test that a POST request with invalid data re-renders the signup form for HTML."""
+        response = self.client.post(reverse("signup"), data={
+            "first_name": "John",
+            "last_name": "Doe",
+            "username": "johndoe@gmail.com",
+            "password1": "password123",
+            "password2": "password456"
+        }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "auth/signup.html")
+        self.assertContains(response, "The two password fields")
+
+    def test_post_request_valid_data_json(self):
+        """Test that a POST request with valid data creates a user and returns a JSON response."""
+        response = self.client.post(self.signup_url, {
+            "first_name": "John",
+            "last_name": "Doe",
+            "username": "johndoe@gmail.com",
+            "password1": "Ras34@@sd!cx",
+            "password2": "Ras34@@sd!cx"
+        }, content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json(), {
+            "message": "Signup successful",
+            "user": {"username": "johndoe@gmail.com"}
+        })
+        self.assertTrue(User.objects.filter(
+            username="johndoe@gmail.com").exists())
+
+    def test_post_request_invalid_data_json(self):
+        """Test that a POST request with invalid data returns an error in JSON."""
+        response = self.client.post(self.signup_url, {
+            "first_name": "John",
+            "username": "johndoe@gmail.com",
+            "password1": "password123",
+            "password2": "password456"  # Passwords do not match
+        }, content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("errors", response.json())
+        self.assertIn("password2", response.json()["errors"])
+
+    def test_invalid_method(self):
+        """Test that a method other than GET or POST returns a 405 Method Not Allowed."""
+        response = self.client.put(
+            self.signup_url, {}, content_type="application/json")
+        self.assertEqual(response.status_code,
+                         status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_get_login_page(self):
+        """
+        Test GET request renders the login page.
+        """
+        response = self.client.get(self.login_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'auth/login.html')
+        self.assertContains(response, '<form')
+
+    def test_successful_login_html(self):
+        """
+        Test successful login with HTML form submission.
+        """
+        response = self.client.post(self.login_url, {
+            'username': 'testuser',
+            'password': 'password123'
+        })
+        self.assertEqual(response.status_code, 302)
+        # Replace with your success page template
+        self.assertRedirects(response, '/')
+
+    def test_failed_login_html(self):
+        """
+        Test failed login with HTML form submission.
+        """
+        response = self.client.post(self.login_url, {
+            'username': 'testuser',
+            'password': 'wrongpassword'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'auth/login.html')
+        self.assertContains(response, 'Invalid username or password')
+
+    def test_successful_login_json(self):
+        """
+        Test successful login with JSON request.
+        """
+        response = self.client.post(self.login_url, {
+            'username': 'testuser',
+            'password': 'password123'
+        }, content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), {
+            "message": "Login successful",
+            "user": {
+                "username": "testuser"
+            }
+        })
+
+    def test_failed_login_json(self):
+        """
+        Test failed login with JSON request.
+        """
+        response = self.client.post(self.login_url, {
+            'username': 'testuser',
+            'password': 'wrongpassword'
+        }, content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), {
+            "message": "Invalid username or password"
+        })
 
     def test_create_user(self):
         url = reverse('user_create')
         data = {'username': 'newuser', 'password': '12345'}
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_retrieve_users(self):
@@ -156,7 +290,7 @@ class ViewsTestCase(TestCase):
     def test_restore_farm_data(self):
         url = reverse('restore_farm_data')
         data = {'device_id': '12345'}
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_farm_data(self):
@@ -240,7 +374,7 @@ class ViewsTestCase(TestCase):
     def test_generate_map_link(self):
         url = reverse('map_share')
         data = {'file-id': self.file.id}
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, content_type="application/json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
@@ -408,7 +542,7 @@ class MapViewTest(TestCase):
             valid_until=timezone.now() + datetime.timedelta(days=90)
         )
 
-    @patch('requests.get')
+    @ patch('requests.get')
     def test_map_view_with_valid_access_code(self, mock_initialize_earth_engine):
         response = self.client.get(
             self.map_url + '?file-id=1&access-code=23c4b3d4-4b3d-4b3d-4b3d-4b3d4b3d4b3d')
@@ -442,7 +576,7 @@ class MapViewTest(TestCase):
         self.assertJSONEqual(response.content, {
                              "message": "Invalid file ID or access code.", "status": 403})
 
-    @patch('requests.get')
+    @ patch('requests.get')
     def test_map_view_without_access_code(self, mock_initialize_earth_engine):
         response = self.client.get(self.map_url, {
             'lat': '10.0',

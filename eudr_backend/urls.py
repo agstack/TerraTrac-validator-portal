@@ -16,7 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 
 from eudr_backend.views import (
     create_farm_data,
@@ -45,9 +45,33 @@ from eudr_backend.views import (
     update_user,
 )
 from my_eudr_app import auth_views, map_views, views
+from rest_framework import permissions
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Terratrac API Documentation",
+        default_version="v1",
+        description="TerraTrac Validation Portal allows users to upload the list of plot geolocation data (point when the plot is less than 4 hectares, and polygon when the plot is bigger), then runs these data though a deforestation database using WHisp API for risk assessment,then generates reports for exporters.",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="support@tnslabs.atlassian.net"),
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    permission_classes=[permissions.AllowAny],
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$',
+            schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$',
+            schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger/', schema_view.with_ui('swagger',
+         cache_timeout=0), name='schema-swagger-ui'),
+    path('redoc/', schema_view.with_ui('redoc',
+         cache_timeout=0), name='schema-redoc'),
     path("", views.index, name="index"),
     path("auth/", include("my_eudr_app.urls")),
     path("validator/", views.validator, name="validator"),
