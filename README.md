@@ -58,6 +58,10 @@ To run the tests:
 
 `python manage.py test`
 
+## Regressions Tests Document
+
+The regression tests document is available from google docs [here](https://docs.google.com/spreadsheets/d/1PsRsf94dgNT-Es_cCymYYq1qraZi8t7r-J6_bsHN77I/edit?usp=sharing)
+
 ## Deployment
 
 1. Ensure you have set the environment variables in your hosting environment
