@@ -71,12 +71,12 @@ jobs:
 
       - name: Deploy to AWS EC2
         run: |
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << EOF
+          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "
             cd TerraTrac-Validation-Portal/
             git pull origin main
             source venv/bin/activate
-            pip install -r requirements.txt
-            python manage.py migrate
-            python manage.py collectstatic --noinput
-            systemctl restart gunicorn
-          EOF
+            pip install -r requirements.txt &&
+            python manage.py migrate &&
+            python manage.py collectstatic --noinput &&
+            sudo systemctl restart gunicorn
+          "
