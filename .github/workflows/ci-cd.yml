@@ -69,9 +69,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Deploy to AWS EC2
+      - name: Set Up SSH Key
         run: |
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY_PEM }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to AWS EC2
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          ssh $SERVER_USER@$SERVER_HOST << EOF
             cd TerraTrac-Validation-Portal/
             git pull origin main
             source venv/bin/activate
@@ -79,4 +89,4 @@ jobs:
             python manage.py migrate &&
             python manage.py collectstatic --noinput &&
             sudo systemctl restart gunicorn
-          "
+          EOF
