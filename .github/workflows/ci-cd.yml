@@ -41,6 +41,7 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> .env
           echo "AWS_STORAGE_BUCKET_NAME=$AWS_STORAGE_BUCKET_NAME" >> .env
           echo "AWS_S3_REGION_NAME=$AWS_S3_REGION_NAME" >> .env
+          echo "EE_ACCOUNT_NAME=$EE_ACCOUNT_NAME" >> .env
       
       - name: Create ee-creds.json file
         run: |
