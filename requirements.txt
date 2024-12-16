@@ -11,5 +11,5 @@ httpx==0.27.2
 pandas==2.2.3
 python-decouple==3.8
 Requests==2.32.3
-shapely==2.0.6drf-yasg==1.21.8
-dry-yasg==1.21.8
+shapely==2.0.6
+drf-yasg==1.21.8
