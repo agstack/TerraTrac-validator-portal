@@ -30,6 +30,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Create env file
+        run: |
+          echo "AGSTACK_API_EMAIL=$AGSTACK_API_EMAIL" >> .env
+          echo "AGSTACK_API_PASSWORD=$AGSTACK_API_PASSWORD" >> .env
+          echo "EMAIL_HOST_USER=$EMAIL_HOST_USER" >> .env
+          echo "EMAIL_HOST_PASSWORD=$EMAIL_HOST_PASSWORD" >> .env
+          echo "EMAIL_HOST_DEFAULT_USER=$EMAIL_HOST_DEFAULT_USER" >> .env
+          echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> .env
+          echo "AWS_STORAGE_BUCKET_NAME=$AWS_STORAGE_BUCKET_NAME" >> .env
+          echo "AWS_S3_REGION_NAME=$AWS_S3_REGION_NAME" >> .env
+
       - name: Apply Migrations
         run: python manage.py migrate
 
@@ -47,16 +59,6 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Deploy to AWS EC2
-        env:
-            AGSTACK_API_EMAIL: ${{ secrets.AGSTACK_API_EMAIL }}
-            AGSTACK_API_PASSWORD: ${{ secrets.AGSTACK_API_EMAIL }}
-            EMAIL_HOST_USER: ${{ secrets.AGSTACK_API_EMAIL }}
-            EMAIL_HOST_PASSWORD: ${{ secrets.AGSTACK_API_EMAIL }}
-            EMAIL_HOST_DEFAULT_USER: ${{ secrets.AGSTACK_API_EMAIL }}
-            AWS_ACCESS_KEY_ID: ${{ secrets.AGSTACK_API_EMAIL }}
-            AWS_SECRET_ACCESS_KEY: ${{ secrets.AGSTACK_API_EMAIL }}
-            AWS_STORAGE_BUCKET_NAME: ${{ secrets.AGSTACK_API_EMAIL }}
-            AWS_S3_REGION_NAME: ${{ secrets.AGSTACK_API_EMAIL }}
         run: |
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST << EOF
             cd TerraTrac-Validation-Portal/
