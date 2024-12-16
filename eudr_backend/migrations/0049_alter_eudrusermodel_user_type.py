@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('eudr_backend', '0048_alter_eudrusermodel_user_type'),
+        ('eudr_backend', '0047_alter_eudrfarmbackupmodel_size_and_more'),
     ]
 
     operations = [
