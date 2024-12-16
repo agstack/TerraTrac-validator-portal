@@ -113,7 +113,7 @@ def creaf_descals_palm_prep():
 
 def fdap_palm_prep():
     fdap_palm2020_model_raw = ee.ImageCollection(
-        "projects/forestdatapartnership/assets/community_palm/20240312")
+        "projects/forestdatapartnership/assets/palm/model_2024a")
     # to check with Nick (increased due to false positives)
     fdap_palm = fdap_palm2020_model_raw.mosaic().gt(0.95).selfMask()
     return fdap_palm.rename("Oil_palm_FDaP")
