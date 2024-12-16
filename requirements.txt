@@ -13,3 +13,6 @@ python-decouple==3.8
 Requests==2.32.3
 shapely==2.0.6
 drf-yasg==1.21.8
+django-cors-headers==4.6.0
+django-storages==1.14.4
+setuptools==75.6.0
