@@ -41,9 +41,17 @@ jobs:
           echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> .env
           echo "AWS_STORAGE_BUCKET_NAME=$AWS_STORAGE_BUCKET_NAME" >> .env
           echo "AWS_S3_REGION_NAME=$AWS_S3_REGION_NAME" >> .env
+      
+      - name: Create ee-creds.json file
+        run: |
+          echo "${{ secrets.EE_CREDENTIALS_JSON }}" | base64 --decode > ee-eudr-compliance-bc1b62e4e930.json
 
       - name: Apply Migrations
         run: python manage.py migrate
+
+      - name: Validate ee-creds.json
+        run: |
+          python -c "import json; json.load(open('ee-eudr-compliance-bc1b62e4e930.json'))"
 
       - name: Run Unit Tests
         run: python manage.py test

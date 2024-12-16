@@ -97,6 +97,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 
+EE_ACCOUNT_NAME = config('EE_ACCOUNT_NAME')
 EE_CREDENTIALS = os.path.join(BASE_DIR, 'ee-eudr-compliance-bc1b62e4e930.json')
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 MB
@@ -113,7 +114,7 @@ ASGI_APPLICATION = 'eudr_backend.asgi.application'
 
 def initialize_earth_engine():
     ee.Initialize(ee.ServiceAccountCredentials(
-        "tns-2024@ee-eudr-compliance.iam.gserviceaccount.com", EE_CREDENTIALS
+        EE_ACCOUNT_NAME, EE_CREDENTIALS
     ))
 
 
