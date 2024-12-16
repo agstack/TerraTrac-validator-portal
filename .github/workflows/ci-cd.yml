@@ -45,14 +45,14 @@ jobs:
           echo "SERVER_USER=$SERVER_USER" >> .env
           echo "SERVER_HOST=$SERVER_HOST" >> .env
 
-      - name: Create ee-creds.json file
+      - name: Create ee creds json file
         run: |
           echo "${{ secrets.EE_CREDENTIALS_JSON }}" | base64 --decode > ee-eudr-compliance-bc1b62e4e930.json
 
       - name: Apply Migrations
         run: python manage.py migrate
 
-      - name: Validate ee-creds.json
+      - name: Validate ee creds json
         run: |
           python -c "import json; json.load(open('ee-eudr-compliance-bc1b62e4e930.json'))"
 
