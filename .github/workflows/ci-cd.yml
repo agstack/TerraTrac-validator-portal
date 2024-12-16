@@ -42,7 +42,9 @@ jobs:
           echo "AWS_STORAGE_BUCKET_NAME=$AWS_STORAGE_BUCKET_NAME" >> .env
           echo "AWS_S3_REGION_NAME=$AWS_S3_REGION_NAME" >> .env
           echo "EE_ACCOUNT_NAME=$EE_ACCOUNT_NAME" >> .env
-      
+          echo "SERVER_USER=$SERVER_USER" >> .env
+          echo "SERVER_HOST=$SERVER_HOST" >> .env
+
       - name: Create ee-creds.json file
         run: |
           echo "${{ secrets.EE_CREDENTIALS_JSON }}" | base64 --decode > ee-eudr-compliance-bc1b62e4e930.json
