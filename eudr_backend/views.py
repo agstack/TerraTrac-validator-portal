@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 import pandas as pd
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
@@ -25,6 +25,7 @@ from .serializers import (
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.permissions import IsAuthenticated
 
 
 @swagger_auto_schema(
@@ -53,6 +54,7 @@ from drf_yasg import openapi
     }
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def create_user(request):
     serializer = EUDRUserModelSerializer(data=request.data)
 
@@ -71,6 +73,7 @@ def create_user(request):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_users(request):
     data = User.objects.all().order_by("-date_joined")
     serializer = EUDRUserModelSerializer(data, many=True)
@@ -85,6 +88,7 @@ def retrieve_users(request):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_user(request, pk):
     user = User.objects.get(id=pk)
     serializer = EUDRUserModelSerializer(user, many=False)
@@ -115,6 +119,7 @@ def retrieve_user(request, pk):
     }
 )
 @api_view(["PUT"])
+@permission_classes([IsAuthenticated])
 def update_user(request, pk):
     user = User.objects.get(id=pk)
     serializer = EUDRUserModelSerializer(instance=user, data=request.data)
@@ -134,6 +139,7 @@ def update_user(request, pk):
     }
 )
 @api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
 def delete_user(request, pk):
     user = User.objects.get(id=pk)
     user.delete()
@@ -143,18 +149,122 @@ def delete_user(request, pk):
 @swagger_auto_schema(
     method="post",
     operation_summary="Create farm data",
-    request_body=EUDRFarmModelSerializer,
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "format": openapi.Schema(type=openapi.TYPE_STRING),
+            "file": openapi.Schema(type=openapi.TYPE_FILE),
+            "data": openapi.Schema(type=openapi.TYPE_OBJECT),
+        },
+        default={
+            "format": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [
+                                [
+                                    [
+                                        -88.89236191114519,
+                                        13.755668940781419
+                                    ],
+                                    [
+                                        -88.8926974442857,
+                                        13.755104779826965
+                                    ],
+                                    [
+                                        -88.89247298437891,
+                                        13.75509578920503
+                                    ],
+                                    [
+                                        -88.89219298771054,
+                                        13.755071065061344
+                                    ],
+                                    [
+                                        -88.89218141761236,
+                                        13.755028359593808
+                                    ],
+                                    [
+                                        -88.89216753349395,
+                                        13.754920472063688
+                                    ],
+                                    [
+                                        -88.89206571662912,
+                                        13.754913729091172
+                                    ],
+                                    [
+                                        -88.89202869231488,
+                                        13.754877766569706
+                                    ],
+                                    [
+                                        -88.89192224741056,
+                                        13.75484854701638
+                                    ],
+                                    [
+                                        -88.89188753711551,
+                                        13.754882261884418
+                                    ],
+                                    [
+                                        -88.89179729034885,
+                                        13.754853042331618
+                                    ],
+                                    [
+                                        -88.89177877819144,
+                                        13.75476763131023
+                                    ],
+                                    [
+                                        -88.89175100995566,
+                                        13.7547631359933
+                                    ],
+                                    [
+                                        -88.89173249779824,
+                                        13.754821575117731
+                                    ],
+                                    [
+                                        -88.89161216877602,
+                                        13.754808089166758
+                                    ],
+                                    [
+                                        -88.891538120147,
+                                        13.75478786023993
+                                    ],
+                                    [
+                                        -88.89236191114519,
+                                        13.755668940781419
+                                    ]
+                                ]
+                            ]
+                        },
+                        "properties": {
+                            "farmer_name": "John Doe",
+                            "farm_size": 4,
+                            "collection_site": "Site A",
+                            "farm_village": "Village A",
+                            "farm_district": "District A",
+                            "latitude": 0,
+                            "longitude": 0,
+                        },
+                    }
+                ]
+            },
+        },
+    ),
     responses={
         201: "Farm data created successfully",
         400: "Bad request",
-    }
+    },
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def create_farm_data(request):
     data_format = request.data.get('format', "geojson") if isinstance(
         request.data, dict) else "geojson"
     raw_data = json.loads(request.data) if isinstance(
         request.data, str) else request.data
+    raw_data = raw_data.get('data') if 'data' in raw_data else raw_data
     file = request.FILES.get('file')
 
     # Validate that either file or raw_data is provided
@@ -186,8 +296,6 @@ def create_farm_data(request):
 
     if data_format == 'csv':
         raw_data = transform_csv_to_json(raw_data)
-
-    serializer = EUDRFarmModelSerializer(data=request.data)
 
     # Combine file_name and format for database entry
     file_data = {
@@ -299,6 +407,7 @@ def create_farm_data(request):
     }
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def sync_farm_data(request):
     sync_results = []
     data = request.data
@@ -345,6 +454,7 @@ def sync_farm_data(request):
     }
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def restore_farm_data(request):
     device_id = request.data.get("device_id")
     phone_number = request.data.get("phone_number")
@@ -386,13 +496,45 @@ def restore_farm_data(request):
 @swagger_auto_schema(
     method="put",
     operation_summary="Update farm data",
-    request_body=EUDRFarmModelSerializer,
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+            "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+            "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+            "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+            "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+            "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+            "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+            "polygon": openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_NUMBER)
+                )
+            ),
+            "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        default={
+            "farmer_name": "John Doe",
+            "farm_size": 4,
+            "collection_site": "Site A",
+            "farm_village": "Village A",
+            "farm_district": "District A",
+            "latitude": -1.62883139933721,
+            "longitude": 29.9898212498949,
+            "polygon": [[41.8781, 87.6298], [41.8781, 87.6299]],
+            "polygon_type": "Polygon",
+        },
+    ),
     responses={
         200: "Farm data updated successfully",
         400: "Bad request",
     }
 )
 @api_view(["PUT"])
+@permission_classes([IsAuthenticated])
 def update_farm_data(request, pk):
     farm_data = EUDRFarmModel.objects.get(id=pk)
     serializer = EUDRFarmModelSerializer(instance=farm_data, data=request.data)
@@ -419,6 +561,7 @@ def update_farm_data(request, pk):
     }
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def revalidate_farm_data(request):
     file_id = request.data.get("file_id")
 
@@ -456,6 +599,7 @@ def revalidate_farm_data(request):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_farm_data(request):
     files = EUDRUploadedFilesModel.objects.filter(
         uploaded_by=request.user.username if request.user.is_authenticated else "admin"
@@ -479,6 +623,7 @@ def retrieve_farm_data(request):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_overlapping_farm_data(request, pk):
     files = EUDRUploadedFilesModel.objects.filter(
         id=pk) if not request.user.is_staff else EUDRUploadedFilesModel.objects.all()
@@ -518,6 +663,7 @@ def retrieve_overlapping_farm_data(request, pk):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_user_farm_data(request, pk):
     users = User.objects.filter(id=pk)
     files = EUDRUploadedFilesModel.objects.filter(
@@ -542,6 +688,7 @@ def retrieve_user_farm_data(request, pk):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_all_synced_farm_data(request):
     data = EUDRFarmBackupModel.objects.all().order_by("-updated_at")
 
@@ -558,6 +705,7 @@ def retrieve_all_synced_farm_data(request):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_all_synced_farm_data_by_cs(request, pk):
     data = EUDRFarmBackupModel.objects.filter(
         site_id=pk
@@ -576,6 +724,7 @@ def retrieve_all_synced_farm_data_by_cs(request, pk):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_collection_sites(request):
     data = EUDRCollectionSiteModel.objects.all().order_by("-updated_at")
 
@@ -592,6 +741,7 @@ def retrieve_collection_sites(request):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_map_data(request):
     files = EUDRUploadedFilesModel.objects.filter(
         uploaded_by=request.user.username if request.user.is_authenticated else "admin"
@@ -629,6 +779,7 @@ def retrieve_farm_detail(request, pk):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_farm_data_from_file_id(request, pk):
     data = EUDRFarmModel.objects.filter(file_id=pk)
     serializer = EUDRFarmModelSerializer(data, many=True)
@@ -643,6 +794,7 @@ def retrieve_farm_data_from_file_id(request, pk):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_files(request):
     data = None
     if request.user.is_authenticated:
@@ -665,6 +817,7 @@ def retrieve_files(request):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_s3_files(request):
     try:
         # Retrieve all files from all directories in the S3 bucket
@@ -701,6 +854,7 @@ def retrieve_s3_files(request):
     }
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_file(request, pk):
     try:
         data = EUDRUploadedFilesModel.objects.get(id=pk)
@@ -716,17 +870,21 @@ def retrieve_file(request, pk):
     responses={
         200: "Template file downloaded successfully",
         400: "Bad request",
-    }
+    }, manual_parameters=[openapi.Parameter(
+        name="file_format",
+        in_=openapi.IN_QUERY,
+        type=openapi.TYPE_STRING,
+        required=True,
+        description="File format to download (csv or geojson)",
+    )],
+    security=[],
 )
 @api_view(["GET"])
 def download_template(request):
-    query_dict = request.GET
-    format_key = next(iter(query_dict.keys()), None)
+    file_format = request.query_params.get("file_format", None)
 
-    if not format_key or '=' not in format_key:
+    if not file_format:
         return Response({"error": "Format parameter is missing or incorrect"}, status=400)
-
-    format = format_key.split('=')[1]
 
     # Create a sample template dataframe
     data = {
@@ -770,12 +928,12 @@ def download_template(request):
         }
     ]}
 
-    if format == "csv":
+    if file_format == "csv":
         response = HttpResponse(content_type="text/csv")
         filename = f"terratrac-upload-template-{timestamp_str}.csv"
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         df.to_csv(response, index=False)
-    elif format == "geojson":
+    elif file_format == "geojson":
         response = HttpResponse(content_type="application/json")
         filename = f"terratrac-upload-template-{timestamp_str}.geojson"
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
@@ -801,6 +959,7 @@ def download_template(request):
     }
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def generate_map_link(request):
     fileId = request.data.get("file-id")
     try:

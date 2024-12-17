@@ -213,7 +213,7 @@ def is_valid_polygon(polygon):
         ):
             return True
         return False
-    except Exception as e:
+    except Exception:
         return False
 
 

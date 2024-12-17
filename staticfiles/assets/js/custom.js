@@ -84,7 +84,7 @@ selectedDownloadFormat?.addEventListener("change", (e) => {
   const selectedFormat = e.target.value;
 
   if (selectedFormat !== "") {
-    window.location.href = `/api/download-template?format%3D${encodeURIComponent(
+    window.location.href = `/api/download-template?file_format=${encodeURIComponent(
       selectedFormat
     )}`;
   }
