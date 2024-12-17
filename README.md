@@ -2,7 +2,7 @@
 
 The **TerraTrac Validation Portal** is a Django REST Framework-based web application designed to upload farm-related data, process it through a third-party API for validation, and allow users to view the analyzed results on an interactive map. The app also supports exporting the analyzed data in various formats such as CSV, GeoJSON, and PDF. It is to help farmers and agricultural organizations to be ready for EUDR compliance which will start to act from 1st January 2024.
 
-This web app is  one of the key components of the broad architecture for the DPI-Digital Public Infrastructure for EUDR compliance.
+This web app is  one of the key components of the **broad architecture** for the DPI-Digital Public Infrastructure for EUDR compliance.
 
 ## Features
 
