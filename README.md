@@ -4,6 +4,12 @@ The **TerraTrac Validation Portal** is a Django REST Framework-based web applica
 
 This web app is  one of the key components of the **broad architecture** for the DPI-Digital Public Infrastructure for EUDR compliance.
 
+### DPI for EUDR Compliance - DRAFT architecture
+
+The objective of this document is to provide a draft, high-level description of the major components of the  new Linux Foundation Agstack project for “Digital Public Infrastructure for EUDR compliance. 
+
+The DPI for EUDR Compliance - DRAFT architecture is available in the [GitHub repository](https://github.com/agstack/TerraTrac-field-app/blob/dev/app/docs/EUDR%20DPI%20-%20DRAFT%20architecture.pdf).
+
 ## Features
 
 - **Data Upload**: Users can upload farm data via CSV or GeoJSON files.
