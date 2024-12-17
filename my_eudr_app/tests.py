@@ -367,7 +367,7 @@ class ViewsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_download_template(self):
-        url = reverse('download_template') + '?format%3Dcsv'
+        url = reverse('download_template') + '?file_format=csv'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
