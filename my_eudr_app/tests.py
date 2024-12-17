@@ -185,9 +185,27 @@ class ViewsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_retrieve_users(self):
+        # Create a superuser
+        superuser = User.objects.create_superuser(
+            username='superuser', password='superpassword')
+
+        # Log in as superuser
+        self.client.login(username='superuser', password='superpassword')
+
+        # Attempt to retrieve users
         url = reverse('user_list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Log out superuser
+        self.client.logout()
+
+        # Log in as a regular user
+        self.client.login(username='testuser', password='password123')
+
+        # Attempt to retrieve users
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_user(self):
         url = reverse('user_detail', args=[self.user.id])
@@ -201,6 +219,10 @@ class ViewsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_user(self):
+        # Ensure only superuser can delete a user
+        superuser = User.objects.create_superuser(
+            username='superuser', password='superpassword')
+        self.client.login(username='superuser', password='superpassword')
         url = reverse('user_delete', args=[self.user.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
