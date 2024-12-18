@@ -1,6 +1,14 @@
 # TerraTrac Validation Portal
 
-The **TerraTrac Validation Portal** is a Django REST Framework-based web application designed to upload farm-related data, process it through a third-party API for validation, and allow users to view the analyzed results on an interactive map. The app also supports exporting the analyzed data in various formats such as CSV, GeoJSON, and PDF. It is for the purpose of helping farmers and agricultural organizations to be ready for EUDR compliance which will start to act from 1st january 2024.
+The **TerraTrac Validation Portal** is a Django REST Framework-based web application designed to upload farm-related data, process it through a third-party API for validation, and allow users to view the analyzed results on an interactive map. The app also supports exporting the analyzed data in various formats such as CSV, GeoJSON, and PDF. It is to help farmers and agricultural organizations to be ready for EUDR compliance which will start to act from 1st January 2024.
+
+This web app is  one of the key components of the **broad architecture** for the DPI-Digital Public Infrastructure for EUDR compliance.
+
+### DPI for EUDR Compliance - DRAFT architecture
+
+The objective of this document is to provide a draft, high-level description of the major components of the  new Linux Foundation Agstack project for “Digital Public Infrastructure for EUDR compliance. 
+
+The DPI for EUDR Compliance - DRAFT architecture is available in the [GitHub repository](https://github.com/agstack/TerraTrac-field-app/blob/dev/app/docs/EUDR%20DPI%20-%20DRAFT%20architecture.pdf).
 
 ## Features
 
@@ -60,7 +68,7 @@ To run the tests:
 
 ## Regressions Tests Document
 
-The regression tests document is available from google docs [here](https://docs.google.com/spreadsheets/d/1PsRsf94dgNT-Es_cCymYYq1qraZi8t7r-J6_bsHN77I/edit?usp=sharing)
+The regression tests document is available from Google Docs [here](https://docs.google.com/spreadsheets/d/1PsRsf94dgNT-Es_cCymYYq1qraZi8t7r-J6_bsHN77I/edit?usp=sharing)
 
 ## Deployment
 

@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework.authtoken",
     "my_eudr_app",
     "eudr_backend",
     "corsheaders",
@@ -89,6 +90,25 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "LOCATION": "/var/tmp/django_cache",
     }
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Authorization header using token. Example: "Token <your_token>"'
+        }
+    },
+    'OPERATIONS_SORTER': None,
+    'TAGS_SORTER': 'alpha',
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication'
+    ]
 }
 
 ROOT_URLCONF = "eudr_backend.urls"

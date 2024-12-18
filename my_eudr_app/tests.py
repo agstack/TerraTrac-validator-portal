@@ -1,12 +1,14 @@
+import json
 from django.urls import reverse
 from eudr_backend.models import EUDRSharedMapAccessCodeModel
-from django.test import Client
+from rest_framework.test import APIClient
 from unittest.mock import patch
 from django.test import TestCase
 from django.utils import timezone
 import datetime
 from django.contrib.auth.models import User
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 
 from eudr_backend.models import (
     EUDRFarmModel,
@@ -20,10 +22,11 @@ from eudr_backend.models import (
 
 class ViewsTestCase(TestCase):
     def setUp(self):
-        self.client = Client()
+        self.client = APIClient()
         self.user = User.objects.create_user(
             username='testuser', password='password123')
-        self.client.login(username='testuser', password='password123')
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
         self.file = EUDRUploadedFilesModel.objects.create(
             file_name='test.csv', uploaded_by='testuser')
         self.farm = EUDRFarmModel.objects.create(
@@ -88,11 +91,12 @@ class ViewsTestCase(TestCase):
             "username": "johndoe@gmail.com",
             "password1": "Ras34@@sd!cx",
             "password2": "Ras34@@sd!cx"
-        }, content_type="application/json")
+        }, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.json(), {
             "message": "Signup successful",
-            "user": {"username": "johndoe@gmail.com"}
+            "user": {"username": "johndoe@gmail.com"},
+            "token": response.json()["token"]
         })
         self.assertTrue(User.objects.filter(
             username="johndoe@gmail.com").exists())
@@ -104,7 +108,7 @@ class ViewsTestCase(TestCase):
             "username": "johndoe@gmail.com",
             "password1": "password123",
             "password2": "password456"  # Passwords do not match
-        }, content_type="application/json")
+        }, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("errors", response.json())
         self.assertIn("password2", response.json()["errors"])
@@ -112,7 +116,7 @@ class ViewsTestCase(TestCase):
     def test_invalid_method(self):
         """Test that a method other than GET or POST returns a 405 Method Not Allowed."""
         response = self.client.put(
-            self.signup_url, {}, content_type="application/json")
+            self.signup_url, {}, format="json")
         self.assertEqual(response.status_code,
                          status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -156,13 +160,14 @@ class ViewsTestCase(TestCase):
         response = self.client.post(self.login_url, {
             'username': 'testuser',
             'password': 'password123'
-        }, content_type="application/json")
+        }, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), {
             "message": "Login successful",
             "user": {
                 "username": "testuser"
-            }
+            },
+            "token": response.json()["token"]
         })
 
     def test_failed_login_json(self):
@@ -172,7 +177,7 @@ class ViewsTestCase(TestCase):
         response = self.client.post(self.login_url, {
             'username': 'testuser',
             'password': 'wrongpassword'
-        }, content_type="application/json")
+        }, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), {
             "message": "Invalid username or password"
@@ -181,13 +186,36 @@ class ViewsTestCase(TestCase):
     def test_create_user(self):
         url = reverse('user_create')
         data = {'username': 'newuser', 'password': '12345'}
-        response = self.client.post(url, data, content_type="application/json")
+        response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_retrieve_users(self):
+        self.client = APIClient()
+        # Create a superuser
+        superuser = User.objects.create_superuser(
+            username='superuser', password='superpassword')
+
+        token = Token.objects.create(user=superuser)
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+        # Attempt to retrieve users
         url = reverse('user_list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Log out superuser
+        self.client.logout()
+
+        # Log in as a regular user
+        self.user = User.objects.create_user(
+            username='testuser2', password='password123')
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+        # Attempt to retrieve users
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_user(self):
         url = reverse('user_detail', args=[self.user.id])
@@ -197,10 +225,17 @@ class ViewsTestCase(TestCase):
     def test_update_user(self):
         url = reverse('user_update', args=[self.user.id])
         data = {'username': 'updateduser'}
-        response = self.client.put(url, data, content_type='application/json')
+        response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_user(self):
+        # Ensure only superuser can delete a user
+        self.client = APIClient()
+        superuser = User.objects.create_superuser(
+            username='superuser', password='superpassword')
+        token = Token.objects.create(user=superuser)
+        self.client.credentials(
+            HTTP_AUTHORIZATION='Token ' + token.key)
         url = reverse('user_delete', args=[self.user.id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -210,19 +245,15 @@ class ViewsTestCase(TestCase):
         data = {"type": "FeatureCollection", "features": [{
             "type": "Feature",
             "properties": {
-                "remote_id": "1b8313c1-c584-4e6b-8a1c-3e9fd962798b",
                 "farmer_name": "sjee",
                 "member_id": "",
                 "collection_site": "fhfh",
                 "agent_name": "fjf",
                 "farm_village": "dhxfy",
                 "farm_district": "fgud",
-                "farm_size": 1.11,
-                "latitude": -1.965532,
-                "longitude": 30.064553,
-                "created_at": "Mon Sep 30 12:52:09 GMT+02:00 2024",
-                "updated_at": "Mon Sep 30 12:52:09 GMT+02:00 2024"
-
+                "farm_size": 4.11,
+                "latitude": 0,
+                "longitude": 0
             },
             "geometry": {
                 "type": "Polygon",
@@ -231,7 +262,6 @@ class ViewsTestCase(TestCase):
         }, {
             "type": "Feature",
             "properties": {
-                "remote_id": "8317a3ca-c1c2-4990-98e4-055fbd8e4e19",
                 "farmer_name": "shdh",
                 "member_id": "",
                 "collection_site": "fhfh",
@@ -250,7 +280,7 @@ class ViewsTestCase(TestCase):
                 "coordinates": [-1.965526, 30.064561]
             }
         }]}
-        response = self.client.post(url, data, content_type='application/json')
+        response = self.client.post(url, data, format='json')
         self.file.id = response.data['file_id']
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -284,13 +314,13 @@ class ViewsTestCase(TestCase):
                 ]
             }
         ]
-        response = self.client.post(url, data, content_type='application/json')
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_restore_farm_data(self):
         url = reverse('restore_farm_data')
         data = {'device_id': '12345'}
-        response = self.client.post(url, data, content_type="application/json")
+        response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_update_farm_data(self):
@@ -307,7 +337,7 @@ class ViewsTestCase(TestCase):
                 [1, 2], [3, 4], [5, 6]]},
             'accuracies': [95, 90]
         }
-        response = self.client.put(url, data, content_type='application/json')
+        response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_retrieve_farm_data(self):
@@ -374,7 +404,7 @@ class ViewsTestCase(TestCase):
     def test_generate_map_link(self):
         url = reverse('map_share')
         data = {'file-id': self.file.id}
-        response = self.client.post(url, data, content_type="application/json")
+        response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
@@ -526,7 +556,7 @@ class PerformanceTests(TestCase):
 
 class MapViewTest(TestCase):
     def setUp(self):
-        self.client = Client()
+        self.client = APIClient()
         # Adjust this based on your URL configuration
         self.map_url = reverse('map_view')
 
