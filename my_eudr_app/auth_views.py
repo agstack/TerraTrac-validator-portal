@@ -21,6 +21,8 @@ from drf_yasg import openapi
 from rest_framework import status
 from rest_framework.response import Response
 
+from eudr_backend.serializers import EUDRUserModelSerializer
+
 
 @swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
     'first_name': openapi.Schema(type=openapi.TYPE_STRING, description='First Name'),
@@ -29,8 +31,63 @@ from rest_framework.response import Response
     'password1': openapi.Schema(type=openapi.TYPE_STRING, description='Password'),
     'password2': openapi.Schema(type=openapi.TYPE_STRING, description='Password Confirmation')
 }, default={'first_name': 'John', 'last_name': 'Doe', 'username': 'johndoe@gmail.com', 'password1': 'password', 'password2': 'password'}), security=[],
-    tags=["Auth Management"])
-@swagger_auto_schema(method='get', security=[],
+    tags=["Auth Management"], operation_summary="Endpoint that signs up a user",
+    responses={
+        201: openapi.Response(
+            description="Successful Response",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='Message'),
+                    'user': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'username': openapi.Schema(type=openapi.TYPE_STRING, description='Username')
+                        }
+                    ),
+                    'token': openapi.Schema(type=openapi.TYPE_STRING, description='Token')
+                }
+            ),
+            examples={
+                "application/json": {
+                    "message": "Signup successful",
+                    "user": {
+                        "username": "johndoe"
+                    },
+                    "token": "f5b0d5e7d2b8e5d8f4e3d2b1"
+                }
+            },
+        ),
+    400: openapi.Response(
+        description="Failed Response",
+        schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'message': openapi.Schema(type=openapi.TYPE_STRING, description='Message'),
+                'errors': openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'username': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING, description='Error message')),
+                        'password1': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING, description='Error message'))
+                    }
+                )
+            }
+        ),
+        examples={
+            "application/json": {
+                "message": "Signup failed",
+                "errors": {
+                    "username": [
+                        "This field is required."
+                    ],
+                    "password1": [
+                        "This field is required."
+                    ]
+                }
+            }})
+}
+)
+@swagger_auto_schema(method='get', operation_summary="Endpoint that returns sign up page", security=[],
                      tags=["Auth Management"])
 @api_view(['GET', 'POST'])
 def signup_view(request):
@@ -53,8 +110,8 @@ def signup_view(request):
             user.email = data.get('username', '')
             user.save()
 
-            # generate token
-            token, created = Token.objects.get_or_create(user=user)
+            # generate token for user
+            token, _ = Token.objects.get_or_create(user=user)
 
             if request.content_type == 'application/json':
                 return Response({
@@ -88,15 +145,56 @@ def signup_view(request):
         default={'username': 'johndoe', 'password': 'password'}
     ),
     responses={
-        200: "Login successful",
-        400: "Invalid username or password",
+        200: openapi.Response(
+            description="Successful Response",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='Message'),
+                    'user': openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'username': openapi.Schema(type=openapi.TYPE_STRING, description='Username')
+                        }
+                    ),
+                    'token': openapi.Schema(type=openapi.TYPE_STRING, description='Token')
+                }
+            ),
+            examples={
+                "application/json": {
+                    "message": "Login successful",
+                    "user": {
+                        "username": "johndoe"
+                    },
+                    "token": "f5b0d5e7d2b8e5d8f4e3d2b1"
+                }
+            }
+        ),
+        400: openapi.Response(
+            description="Failed Response",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='Message')
+                }
+            ),
+            examples={
+                "application/json": {
+                    "message": "Invalid username or password"
+                }
+            }
+        )
     }, security=[],
-    tags=["Auth Management"]
+    tags=["Auth Management"],
+    operation_summary="Endpoint that logs in a user"
 )
-@swagger_auto_schema(method='get', security=[],
-                     tags=["Auth Management"])
-@api_view(['GET', 'POST'])
+@ swagger_auto_schema(method='get', operation_summary="Endpoint that returns sign up page", security=[],
+                      tags=["Auth Management"])
+@ api_view(['GET', 'POST'])
 def login_view(request):
+    """
+    Handle user login for both HTML rendering and API requests.
+    """
     if request.method == 'GET':
         # Render the login HTML template for GET requests
         form = AuthenticationForm()
@@ -139,14 +237,16 @@ def login_view(request):
                 return render(request, 'auth/login.html', {'form': form})
 
 
-@login_required
-@swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+@ login_required
+@ swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
     'first_name': openapi.Schema(type=openapi.TYPE_STRING, description='First Name'),
     'last_name': openapi.Schema(type=openapi.TYPE_STRING, description='Last Name'),
     'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email')
 }, default={'first_name': 'John', 'last_name': 'Doe', 'email': 'johndoes@gmail.com'}),
-    tags=["User Management"])
-@api_view(['POST'])
+    responses={200: openapi.Response(description="Successful Response", schema=openapi.Schema(
+        type=openapi.TYPE_OBJECT, properties={'message': openapi.Schema(type=openapi.TYPE_STRING, description='Message')}))},
+    tags=["User Management"], operation_summary="Endpoint that allows a user to update their password")
+@ api_view(['POST'])
 def change_password(request):
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
@@ -164,18 +264,48 @@ def change_password(request):
     return render(request, 'change_password.html', {'form': form})
 
 
-@login_required
+@ login_required
 def logout_view(request):
     if request.method == 'POST':
         logout(request)
         return redirect('login')
 
 
-@swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+@ swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
     'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email')
 }, default={'email': 'johndoe@gmail.com'}), security=[],
-    tags=["User Management"])
-@api_view(['POST'])
+    tags=["User Management"], operation_summary="Endpoint that sends a password reset link to a user's email", responses={
+        200: openapi.Response(
+            description="Successful Response",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='Message')
+                }
+            ),
+            examples={
+                "application/json": {
+                    "message": "A link to reset your password has been sent to your email address."
+                }
+            }
+        ),
+        400: openapi.Response(
+            description="Failed Response",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='Message')
+                }
+            ),
+            examples={
+                "application/json": {
+                    "message": "No user found with this email address."
+                }
+            }
+        )
+}
+)
+@ api_view(['POST'])
 def password_reset_request(request):
     if request.method == "POST":
         password_reset_form = PasswordResetForm(request.POST)
@@ -211,9 +341,9 @@ def password_reset_request(request):
     return render(request, "auth/password_reset.html", {"form": password_reset_form})
 
 
-@swagger_auto_schema(method='get', security=[],
-                     tags=["User Management"])
-@api_view(['GET'])
+@ swagger_auto_schema(method='get', security=[],
+                      tags=["User Management"], operation_summary="Endpoint that allows a user to reset their password")
+@ api_view(['GET'])
 def password_reset_confirm(request, uidb64=None, token=None):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
