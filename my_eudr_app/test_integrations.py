@@ -2,6 +2,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
 
 
 class IntegrationTests(TestCase):
@@ -60,6 +62,16 @@ class IntegrationTests(TestCase):
         self.assertEqual(login_response.status_code, 302)
         self.assertTrue('_auth_user_id' in self.client.session)
 
+        user = User.objects.get(username='testuser')
+
+        # Generate token for the user
+        token, created = Token.objects.get_or_create(user=user)
+        self.assertIsNotNone(token.key)
+        self.client = APIClient()
+
+        # Use the token in subsequent requests
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
         # Sync Farm Data
         data = {"type": "FeatureCollection", "features": [{
             "type": "Feature",
@@ -104,9 +116,8 @@ class IntegrationTests(TestCase):
                 "coordinates": [-1.965526, 30.064561]
             }
         }]}
-
         create_response = self.client.post(
-            reverse('create_farm_data'), data, content_type='application/json')
+            reverse('create_farm_data'), data, format='json')
         self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
 
         # Retrieve Farm Data

@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 import pandas as pd
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
@@ -27,6 +27,7 @@ from .serializers import (
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
 
 @swagger_auto_schema(
@@ -52,7 +53,8 @@ from rest_framework.permissions import IsAuthenticated
     responses={
         201: "User created successfully",
         400: "Bad request",
-    }
+    },
+    tags=["User Management"]
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -71,9 +73,11 @@ def create_user(request):
     operation_summary="Retrieve all users",
     responses={
         200: "Users retrieved successfully",
-    }
+    },
+    tags=["User Management"]
 )
 @api_view(["GET"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsSuperUser])
 def retrieve_users(request):
     data = User.objects.all().order_by("-date_joined")
@@ -86,7 +90,8 @@ def retrieve_users(request):
     operation_summary="Retrieve a user",
     responses={
         200: "User retrieved successfully",
-    }
+    },
+    tags=["User Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -117,7 +122,8 @@ def retrieve_user(request, pk):
     responses={
         200: "User updated successfully",
         400: "Bad request",
-    }
+    },
+    tags=["User Management"]
 )
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
@@ -148,9 +154,11 @@ def update_user(request, pk):
     operation_summary="Delete a user",
     responses={
         204: "User deleted successfully",
-    }
+    },
+    tags=["User Management"]
 )
 @api_view(["DELETE"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsSuperUser])
 def delete_user(request, pk):
     if not request.user.is_superuser:
@@ -274,8 +282,10 @@ def delete_user(request, pk):
         201: "Farm data created successfully",
         400: "Bad request",
     },
+    tags=["Farm Data Management"]
 )
 @api_view(["POST"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def create_farm_data(request):
     data_format = request.data.get('format', "geojson") if isinstance(
@@ -422,7 +432,8 @@ def create_farm_data(request):
     responses={
         200: "Farm data synced successfully",
         400: "Bad request",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -469,7 +480,8 @@ def sync_farm_data(request):
     ),
     responses={
         200: "Farm data restored successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -549,7 +561,8 @@ def restore_farm_data(request):
     responses={
         200: "Farm data updated successfully",
         400: "Bad request",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
@@ -576,7 +589,8 @@ def update_farm_data(request, pk):
     responses={
         201: "Farm data revalidated successfully",
         400: "Bad request",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -614,7 +628,8 @@ def revalidate_farm_data(request):
     operation_summary="Retrieve farm data",
     responses={
         200: "Farm data retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -638,7 +653,8 @@ def retrieve_farm_data(request):
     operation_summary="Retrieve overlapping farm data",
     responses={
         200: "Overlapping farm data retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -678,7 +694,8 @@ def retrieve_overlapping_farm_data(request, pk):
     operation_summary="Retrieve user farm data",
     responses={
         200: "User farm data retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -703,7 +720,8 @@ def retrieve_user_farm_data(request, pk):
     operation_summary="Retrieve all synced farm data",
     responses={
         200: "All synced farm data retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -720,7 +738,8 @@ def retrieve_all_synced_farm_data(request):
     operation_summary="Retrieve all synced farm data by collection site",
     responses={
         200: "All synced farm data by collection site retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -739,7 +758,8 @@ def retrieve_all_synced_farm_data_by_cs(request, pk):
     operation_summary="Retrieve collection sites",
     responses={
         200: "Collection sites retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -756,7 +776,8 @@ def retrieve_collection_sites(request):
     operation_summary="Retrieve map data",
     responses={
         200: "Map data retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -780,7 +801,8 @@ def retrieve_map_data(request):
     operation_summary="Retrieve farm detail",
     responses={
         200: "Farm detail retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 def retrieve_farm_detail(request, pk):
@@ -794,7 +816,8 @@ def retrieve_farm_detail(request, pk):
     operation_summary="Retrieve farm data from file ID",
     responses={
         200: "Farm data retrieved successfully",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -809,7 +832,8 @@ def retrieve_farm_data_from_file_id(request, pk):
     operation_summary="Retrieve files",
     responses={
         200: "Files retrieved successfully",
-    }
+    },
+    tags=["Files Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -832,7 +856,8 @@ def retrieve_files(request):
     responses={
         200: "All files retrieved successfully",
         400: "Bad request",
-    }
+    },
+    tags=["Files Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -869,7 +894,8 @@ def retrieve_s3_files(request):
     responses={
         200: "File retrieved successfully",
         404: "File not found",
-    }
+    },
+    tags=["Files Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -896,6 +922,7 @@ def retrieve_file(request, pk):
         description="File format to download (csv or geojson)",
     )],
     security=[],
+    tags=["Files Management"]
 )
 @api_view(["GET"])
 def download_template(request):
@@ -974,7 +1001,8 @@ def download_template(request):
     responses={
         200: "Map link generated successfully",
         400: "Bad request",
-    }
+    },
+    tags=["Farm Data Management"]
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
