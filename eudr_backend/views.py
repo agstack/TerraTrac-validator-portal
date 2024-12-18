@@ -51,8 +51,56 @@ from rest_framework.authentication import TokenAuthentication
         },
     ),
     responses={
-        201: "User created successfully",
-        400: "Bad request",
+        201: openapi.Response(
+            description="User created successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "username": openapi.Schema(type=openapi.TYPE_STRING),
+                    "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "date_joined": openapi.Schema(type=openapi.TYPE_STRING),
+                    "is_staff": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "is_superuser": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "id": 1,
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "username": "johndoe",
+                    "is_active": True,
+                    "date_joined": "2021-09-09T12:00:00",
+                    "is_staff": False,
+                    "is_superuser": False,
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "first_name": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "last_name": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "username": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "password": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "email": openapi.Schema(type=openapi.TYPE_OBJECT),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "first_name": ["This field is required."],
+                    "last_name": ["This field is required."],
+                    "username": ["This field is required."],
+                    "password": ["This field is required."],
+                    "email": ["This field is required."],
+                },
+            },
+        ),
     },
     tags=["User Management"]
 )
@@ -72,7 +120,49 @@ def create_user(request):
     method="get",
     operation_summary="Retrieve all users",
     responses={
-        200: "Users retrieved successfully",
+        200: openapi.Response(
+            description="Users retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "username": openapi.Schema(type=openapi.TYPE_STRING),
+                        "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "date_joined": openapi.Schema(type=openapi.TYPE_STRING),
+                        "is_staff": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "is_superuser": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    },
+                ),
+            ),
+            examples={
+                "application/json": [
+                    {
+                        "id": 1,
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "username": "johndoe",
+                        "is_active": True,
+                        "date_joined": "2021-09-09T12:00:00",
+                        "is_staff": False,
+                        "is_superuser": False,
+                    },
+                    {
+                        "id": 2,
+                        "first_name": "Jane",
+                        "last_name": "Doe",
+                        "username": "janedoe",
+                        "is_active": True,
+                        "date_joined": "2021-09-09T12:00:00",
+                        "is_staff": False,
+                        "is_superuser": False,
+                    },
+                ],
+            },
+        ),
     },
     tags=["User Management"]
 )
@@ -89,16 +179,60 @@ def retrieve_users(request):
     method="get",
     operation_summary="Retrieve a user",
     responses={
-        200: "User retrieved successfully",
+        200: openapi.Response(
+            description="User retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "username": openapi.Schema(type=openapi.TYPE_STRING),
+                    "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "date_joined": openapi.Schema(type=openapi.TYPE_STRING),
+                    "is_staff": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "is_superuser": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "id": 1,
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "username": "johndoe",
+                    "is_active": True,
+                    "date_joined": "2021-09-09T12:00:00",
+                    "is_staff": False,
+                    "is_superuser": False,
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "User does not exist",
+                },
+            },
+        ),
     },
     tags=["User Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def retrieve_user(request, pk):
-    user = User.objects.get(id=pk)
-    serializer = EUDRUserModelSerializer(user, many=False)
-    return Response(serializer.data)
+    try:
+        user = User.objects.get(id=pk)
+        serializer = EUDRUserModelSerializer(user, many=False)
+        return Response(serializer.data)
+    except User.DoesNotExist:
+        return Response({'error': 'User does not exist'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @swagger_auto_schema(
@@ -120,8 +254,68 @@ def retrieve_user(request, pk):
         },
     ),
     responses={
-        200: "User updated successfully",
-        400: "Bad request",
+        200: openapi.Response(
+            description="User updated successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "username": openapi.Schema(type=openapi.TYPE_STRING),
+                    "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "date_joined": openapi.Schema(type=openapi.TYPE_STRING),
+                    "is_staff": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "is_superuser": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "id": 1,
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "username": "johndoe",
+                    "is_active": True,
+                    "date_joined": "2021-09-09T12:00:00",
+                    "is_staff": False,
+                    "is_superuser": False,
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "first_name": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "last_name": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "username": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "email": openapi.Schema(type=openapi.TYPE_OBJECT),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "first_name": ["This field is required."],
+                    "last_name": ["This field is required."],
+                    "username": ["This field is required."],
+                    "email": ["This field is required."],
+                },
+            },
+        ),
+        403: openapi.Response(
+            description="Forbidden",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "You do not have permission to perform this action",
+                },
+            },
+        ),
     },
     tags=["User Management"]
 )
@@ -153,7 +347,37 @@ def update_user(request, pk):
     method="delete",
     operation_summary="Delete a user",
     responses={
-        204: "User deleted successfully",
+        204: openapi.Response(
+            description="User deleted successfully",
+        ),
+        403: openapi.Response(
+            description="Forbidden",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "You do not have permission to perform this action",
+                },
+            },
+        ),
+        404: openapi.Response(
+            description="Not found",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "User does not exist",
+                },
+            },
+        ),
     },
     tags=["User Management"]
 )
@@ -279,8 +503,36 @@ def delete_user(request, pk):
         },
     ),
     responses={
-        201: "Farm data created successfully",
-        400: "Bad request",
+        201: openapi.Response(
+            description="File/data processed successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "message": openapi.Schema(type=openapi.TYPE_STRING),
+                    "file_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "message": "File/data processed successfully",
+                    "file_id": 1,
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "Either a file or data is required",
+                },
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -430,8 +682,37 @@ def create_farm_data(request):
         ),
     ),
     responses={
-        200: "Farm data synced successfully",
-        400: "Bad request",
+        200: openapi.Response(
+            description="Farm data synced successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "synced_remote_ids": openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(type=openapi.TYPE_STRING)
+                    ),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "synced_remote_ids": ["farm_1", "farm_2"],
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "Either a file or data is required",
+                },
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -479,7 +760,79 @@ def sync_farm_data(request):
         },
     ),
     responses={
-        200: "Farm data restored successfully",
+        200: openapi.Response(
+            description="Farm data restored successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "device_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "collection_site": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "phone_number": openapi.Schema(type=openapi.TYPE_STRING),
+                                "email": openapi.Schema(type=openapi.TYPE_STRING),
+                                "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                                "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
+                        "farms": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "remote_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "polygon": openapi.Schema(
+                                        type=openapi.TYPE_ARRAY,
+                                        items=openapi.Schema(
+                                            type=openapi.TYPE_ARRAY,
+                                            items=openapi.Schema(
+                                                type=openapi.TYPE_NUMBER)
+                                        )
+                                    ),
+                                    "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            examples={
+                "application/json": [
+                    {
+                        "device_id": "device_1",
+                        "collection_site": {
+                            "name": "Site A",
+                            "phone_number": "1234567890",
+                            "email": "johndoe@gmail.com",
+                            "latitude": "-1.62883139933721",
+                            "longitude": "29.9898212498949",
+                            "farms": [
+                                {
+                                    "remote_id": "farm_1",
+                                    "farmer_name": "John Doe",
+                                    "farm_size": 4,
+                                    "farm_village": "Village A",
+                                    "farm_district": "District A",
+                                    "latitude": "-1.62883139933721",
+                                    "longitude": "29.9898212498949",
+                                    "polygon": [[41.8781, 87.6298], [41.8781, 87.6299]],
+                                    "polygon_type": "Polygon",
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -559,8 +912,75 @@ def restore_farm_data(request):
         },
     ),
     responses={
-        200: "Farm data updated successfully",
-        400: "Bad request",
+        200: openapi.Response(
+            description="Farm data updated successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                    "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                    "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                    "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                    "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                    "polygon": openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_NUMBER)
+                        )
+                    ),
+                    "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "id": 1,
+                    "farmer_name": "John Doe",
+                    "farm_size": 4,
+                    "collection_site": "Site A",
+                    "farm_village": "Village A",
+                    "farm_district": "District A",
+                    "latitude": -1.62883139933721,
+                    "longitude": 29.9898212498949,
+                    "polygon": [[41.8781, 87.6298], [41.8781, 87.6299]],
+                    "polygon_type": "Polygon",
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "farmer_name": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "farm_size": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "collection_site": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "farm_village": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "farm_district": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "latitude": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "longitude": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "polygon": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "polygon_type": openapi.Schema(type=openapi.TYPE_OBJECT),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "farmer_name": ["This field is required."],
+                    "farm_size": ["This field is required."],
+                    "collection_site": ["This field is required."],
+                    "farm_village": ["This field is required."],
+                    "farm_district": ["This field is required."],
+                    "latitude": ["This field is required."],
+                    "longitude": ["This field is required."],
+                    "polygon": ["This field is required."],
+                    "polygon_type": ["This field is required."],
+                },
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -587,8 +1007,36 @@ def update_farm_data(request, pk):
         },
     ),
     responses={
-        201: "Farm data revalidated successfully",
-        400: "Bad request",
+        201: openapi.Response(
+            description="Farm data revalidated successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "message": openapi.Schema(type=openapi.TYPE_STRING),
+                    "file_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "message": "Farm data revalidated successfully",
+                    "file_id": 1,
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "File ID is required",
+                },
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -627,7 +1075,34 @@ def revalidate_farm_data(request):
     method="get",
     operation_summary="Retrieve farm data",
     responses={
-        200: "Farm data retrieved successfully",
+        200: openapi.Response(
+            description="Farm data retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "polygon": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_NUMBER)
+                            )
+                        ),
+                        "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -652,7 +1127,34 @@ def retrieve_farm_data(request):
     method="get",
     operation_summary="Retrieve overlapping farm data",
     responses={
-        200: "Overlapping farm data retrieved successfully",
+        200: openapi.Response(
+            description="Overlapping farm data retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "polygon": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_NUMBER)
+                            )
+                        ),
+                        "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -693,7 +1195,34 @@ def retrieve_overlapping_farm_data(request, pk):
     method="get",
     operation_summary="Retrieve user farm data",
     responses={
-        200: "User farm data retrieved successfully",
+        200: openapi.Response(
+            description="User farm data retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "polygon": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_NUMBER)
+                            )
+                        ),
+                        "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -719,7 +1248,34 @@ def retrieve_user_farm_data(request, pk):
     method="get",
     operation_summary="Retrieve all synced farm data",
     responses={
-        200: "All synced farm data retrieved successfully",
+        200: openapi.Response(
+            description="All synced farm data retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "polygon": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_NUMBER)
+                            )
+                        ),
+                        "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -737,7 +1293,34 @@ def retrieve_all_synced_farm_data(request):
     method="get",
     operation_summary="Retrieve all synced farm data by collection site",
     responses={
-        200: "All synced farm data by collection site retrieved successfully",
+        200: openapi.Response(
+            description="All synced farm data retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "polygon": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_NUMBER)
+                            )
+                        ),
+                        "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -757,7 +1340,47 @@ def retrieve_all_synced_farm_data_by_cs(request, pk):
     method="get",
     operation_summary="Retrieve collection sites",
     responses={
-        200: "Collection sites retrieved successfully",
+        200: openapi.Response(
+            description="Collection sites retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "phone_number": openapi.Schema(type=openapi.TYPE_STRING),
+                        "email": openapi.Schema(type=openapi.TYPE_STRING),
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+            examples={
+                "application/json": [
+                    {
+                        "id": 1,
+                        "name": "Site A",
+                        "phone_number": "1234567890",
+                        "email": "johndoe@gmail.com",
+                        "latitude": "-1.62883139933721",
+                        "longitude": "29.9898212498949",
+                        "updated_at": "2021-09-09T12:00:00",
+                        "created_at": "2021-09-09T12:00:00",
+                    },
+                    {
+                        "id": 2,
+                        "name": "Site B",
+                        "phone_number": "0987654321",
+                        "email": "janedoe@gmail.com",
+                        "latitude": "-1.62883139933721",
+                        "longitude": "29.9898212498949",
+                        "updated_at": "2021-09-09T12:00:00",
+                        "created_at": "2021-09-09T12:00:00",
+                    },
+                ],
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -775,7 +1398,34 @@ def retrieve_collection_sites(request):
     method="get",
     operation_summary="Retrieve map data",
     responses={
-        200: "Map data retrieved successfully",
+        200: openapi.Response(
+            description="Map data retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "polygon": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_NUMBER)
+                            )
+                        ),
+                        "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -800,7 +1450,31 @@ def retrieve_map_data(request):
     method="get",
     operation_summary="Retrieve farm detail",
     responses={
-        200: "Farm detail retrieved successfully",
+        200: openapi.Response(
+            description="Farm data retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                    "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                    "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                    "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                    "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                    "polygon": openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_NUMBER)
+                        )
+                    ),
+                    "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -815,7 +1489,34 @@ def retrieve_farm_detail(request, pk):
     method="get",
     operation_summary="Retrieve farm data from file ID",
     responses={
-        200: "Farm data retrieved successfully",
+        200: openapi.Response(
+            description="Farm data retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "farmer_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_size": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "collection_site": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_village": openapi.Schema(type=openapi.TYPE_STRING),
+                        "farm_district": openapi.Schema(type=openapi.TYPE_STRING),
+                        "latitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "longitude": openapi.Schema(type=openapi.TYPE_STRING),
+                        "polygon": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_ARRAY,
+                                items=openapi.Schema(
+                                    type=openapi.TYPE_NUMBER)
+                            )
+                        ),
+                        "polygon_type": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        ),
     },
     tags=["Farm Data Management"]
 )
@@ -831,7 +1532,37 @@ def retrieve_farm_data_from_file_id(request, pk):
     method="get",
     operation_summary="Retrieve files",
     responses={
-        200: "Files retrieved successfully",
+        200: openapi.Response(
+            description="All files retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "file_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "uploaded_by": openapi.Schema(type=openapi.TYPE_STRING),
+                        "updated_at": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+            examples={
+                "application/json": [
+                    {
+                        "id": 1,
+                        "file_name": "file_1.geojson",
+                        "uploaded_by": "johndoe",
+                        "updated_at": "2021-09-09T12:00:00",
+                    },
+                    {
+                        "id": 2,
+                        "file_name": "file_2.csv",
+                        "uploaded_by": "janedoe",
+                        "updated_at": "2021-09-09T12:00:00",
+                    },
+                ],
+            },
+        ),
     },
     tags=["Files Management"]
 )
@@ -854,8 +1585,51 @@ def retrieve_files(request):
     method="get",
     operation_summary="Retrieve all files",
     responses={
-        200: "All files retrieved successfully",
-        400: "Bad request",
+        200: openapi.Response(
+            description="All files retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "file_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "uploaded_by": openapi.Schema(type=openapi.TYPE_STRING),
+                        "updated_at": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+            examples={
+                "application/json": [
+                    {
+                        "id": 1,
+                        "file_name": "file_1.geojson",
+                        "uploaded_by": "johndoe",
+                        "updated_at": "2021-09-09T12:00:00",
+                    },
+                    {
+                        "id": 2,
+                        "file_name": "file_2.csv",
+                        "uploaded_by": "janedoe",
+                        "updated_at": "2021-09-09T12:00:00",
+                    },
+                ],
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "An error occurred",
+                },
+            },
+        ),
     },
     tags=["Files Management"]
 )
@@ -892,8 +1666,40 @@ def retrieve_s3_files(request):
     method="get",
     operation_summary="Retrieve file",
     responses={
-        200: "File retrieved successfully",
-        404: "File not found",
+        200: openapi.Response(
+            description="File retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    "file_name": openapi.Schema(type=openapi.TYPE_STRING),
+                    "uploaded_by": openapi.Schema(type=openapi.TYPE_STRING),
+                    "updated_at": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "id": 1,
+                    "file_name": "file_1.geojson",
+                    "uploaded_by": "johndoe",
+                    "updated_at": "2021-09-09T12:00:00",
+                },
+            },
+        ),
+        404: openapi.Response(
+            description="File not found",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "File not found",
+                },
+            },
+        ),
     },
     tags=["Files Management"]
 )
@@ -912,8 +1718,40 @@ def retrieve_file(request, pk):
     method="get",
     operation_summary="Download template file",
     responses={
-        200: "Template file downloaded successfully",
-        400: "Bad request",
+        200: openapi.Response(
+            description="File downloaded successfully",
+            content={
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "access_code": {"type": "string"},
+                            "map_link": {"type": "string"},
+                        },
+                    },
+                    "examples": {
+                        "application/json": {
+                            "access_code": "123456",
+                            "map_link": "https://example.com/map/share/?file-id=123456&access-code=123456",
+                        },
+                    },
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "Format parameter is missing or incorrect",
+                },
+            },
+        ),
     }, manual_parameters=[openapi.Parameter(
         name="file_format",
         in_=openapi.IN_QUERY,
@@ -999,8 +1837,40 @@ def download_template(request):
         },
     ),
     responses={
-        200: "Map link generated successfully",
-        400: "Bad request",
+        200: openapi.Response(
+            description="Map link generated successfully",
+            content={
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "access_code": {"type": "string"},
+                            "map_link": {"type": "string"},
+                        },
+                    },
+                    "examples": {
+                        "application/json": {
+                            "access_code": "123456",
+                            "map_link": "https://example.com/map/share/?file-id=123456&access-code=123456",
+                        },
+                    },
+                },
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "error": "File ID is required",
+                },
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
