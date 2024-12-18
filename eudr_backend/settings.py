@@ -100,7 +100,9 @@ SWAGGER_SETTINGS = {
             'name': 'Authorization',
             'description': 'Authorization header using token. Example: "Token <your_token>"'
         }
-    }
+    },
+    'OPERATIONS_SORTER': None,
+    'TAGS_SORTER': 'alpha',
 }
 
 REST_FRAMEWORK = {

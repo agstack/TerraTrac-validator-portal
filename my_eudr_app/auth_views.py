@@ -28,8 +28,10 @@ from rest_framework.response import Response
     'username': openapi.Schema(type=openapi.TYPE_STRING, description='Username'),
     'password1': openapi.Schema(type=openapi.TYPE_STRING, description='Password'),
     'password2': openapi.Schema(type=openapi.TYPE_STRING, description='Password Confirmation')
-}, default={'first_name': 'John', 'last_name': 'Doe', 'username': 'johndoe@gmail.com', 'password1': 'password', 'password2': 'password'}), security=[])
-@swagger_auto_schema(method='get', security=[])
+}, default={'first_name': 'John', 'last_name': 'Doe', 'username': 'johndoe@gmail.com', 'password1': 'password', 'password2': 'password'}), security=[],
+    tags=["Auth Management"])
+@swagger_auto_schema(method='get', security=[],
+                     tags=["Auth Management"])
 @api_view(['GET', 'POST'])
 def signup_view(request):
     """
@@ -88,9 +90,11 @@ def signup_view(request):
     responses={
         200: "Login successful",
         400: "Invalid username or password",
-    }, security=[]
+    }, security=[],
+    tags=["Auth Management"]
 )
-@swagger_auto_schema(method='get', security=[])
+@swagger_auto_schema(method='get', security=[],
+                     tags=["Auth Management"])
 @api_view(['GET', 'POST'])
 def login_view(request):
     if request.method == 'GET':
@@ -140,7 +144,8 @@ def login_view(request):
     'first_name': openapi.Schema(type=openapi.TYPE_STRING, description='First Name'),
     'last_name': openapi.Schema(type=openapi.TYPE_STRING, description='Last Name'),
     'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email')
-}, default={'first_name': 'John', 'last_name': 'Doe', 'email': 'johndoes@gmail.com'}))
+}, default={'first_name': 'John', 'last_name': 'Doe', 'email': 'johndoes@gmail.com'}),
+    tags=["User Management"])
 @api_view(['POST'])
 def change_password(request):
     if request.method == 'POST':
@@ -168,7 +173,8 @@ def logout_view(request):
 
 @swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
     'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email')
-}, default={'email': 'johndoe@gmail.com'}), security=[])
+}, default={'email': 'johndoe@gmail.com'}), security=[],
+    tags=["User Management"])
 @api_view(['POST'])
 def password_reset_request(request):
     if request.method == "POST":
@@ -205,7 +211,8 @@ def password_reset_request(request):
     return render(request, "auth/password_reset.html", {"form": password_reset_form})
 
 
-@swagger_auto_schema(method='get', security=[])
+@swagger_auto_schema(method='get', security=[],
+                     tags=["User Management"])
 @api_view(['GET'])
 def password_reset_confirm(request, uidb64=None, token=None):
     try:
