@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 import pandas as pd
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
@@ -27,6 +27,7 @@ from .serializers import (
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
 
 @swagger_auto_schema(
@@ -74,6 +75,7 @@ def create_user(request):
     }
 )
 @api_view(["GET"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsSuperUser])
 def retrieve_users(request):
     data = User.objects.all().order_by("-date_joined")
@@ -151,6 +153,7 @@ def update_user(request, pk):
     }
 )
 @api_view(["DELETE"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsSuperUser])
 def delete_user(request, pk):
     if not request.user.is_superuser:
@@ -276,6 +279,7 @@ def delete_user(request, pk):
     },
 )
 @api_view(["POST"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def create_farm_data(request):
     data_format = request.data.get('format', "geojson") if isinstance(

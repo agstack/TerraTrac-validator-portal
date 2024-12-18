@@ -15,6 +15,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.conf import settings
 from rest_framework.decorators import api_view
+from rest_framework.authtoken.models import Token
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework import status
@@ -50,10 +51,14 @@ def signup_view(request):
             user.email = data.get('username', '')
             user.save()
 
+            # generate token
+            token, created = Token.objects.get_or_create(user=user)
+
             if request.content_type == 'application/json':
                 return Response({
                     "message": "Signup successful",
-                    "user": {"username": user.username}
+                    "user": {"username": user.username},
+                    "token": token.key
                 }, status=status.HTTP_201_CREATED)
             else:
                 login(request, user)
@@ -104,13 +109,15 @@ def login_view(request):
 
         if form.is_valid():
             user = form.get_user()
+            token = Token.objects.get_or_create(user=user)[0]
             if request.content_type == 'application/json':
                 # Respond with JSON for API requests
                 return Response({
                     "message": "Login successful",
                     "user": {
                         "username": user.username
-                    }
+                    },
+                    "token": token.key
                 }, status=status.HTTP_200_OK)
             else:
                 login(request, user)
