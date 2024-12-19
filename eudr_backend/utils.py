@@ -246,17 +246,17 @@ def extract_data_from_file(file, data_format):
         raise e
 
 
-def store_failed_file_in_s3(file, user, file_name):
+def store_file_in_s3(file, user, file_name, is_failed=False):
     # Store the file in the AWS S3 bucket's failed directory
     if file:
         s3 = boto3.client('s3', aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                           aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
         s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME,
-                          f'failed/{user.username}_{file_name}', ExtraArgs={'ACL': 'public-read'})
+                          f'{'failed' if is_failed else 'processed'}/{user.username}_{file_name}', ExtraArgs={'ACL': 'public-read'})
 
 
 def handle_failed_file_entry(file_serializer, file, user):
     if "id" in file_serializer.data:
         EUDRUploadedFilesModel.objects.get(
             id=file_serializer.data.get("id")).delete()
-    store_failed_file_in_s3(file, user, file_serializer.data.get('file_name'))
+    store_file_in_s3(file, user, file_serializer.data.get('file_name'))

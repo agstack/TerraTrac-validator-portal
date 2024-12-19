@@ -3,7 +3,6 @@ from django.contrib.auth import login
 from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import redirect, render
 from django.contrib.auth import login, logout, update_session_auth_hash
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -14,14 +13,13 @@ from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from django.urls import reverse
 from django.conf import settings
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.authtoken.models import Token
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework import status
 from rest_framework.response import Response
-
-from eudr_backend.serializers import EUDRUserModelSerializer
+from rest_framework.permissions import IsAuthenticated
 
 
 @swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
@@ -188,9 +186,9 @@ def signup_view(request):
     tags=["Auth Management"],
     operation_summary="Endpoint that logs in a user"
 )
-@ swagger_auto_schema(method='get', operation_summary="Endpoint that returns sign up page", security=[],
-                      tags=["Auth Management"])
-@ api_view(['GET', 'POST'])
+@swagger_auto_schema(method='get', operation_summary="Endpoint that returns login page", security=[],
+                     tags=["Auth Management"])
+@api_view(['GET', 'POST'])
 def login_view(request):
     """
     Handle user login for both HTML rendering and API requests.
@@ -201,19 +199,19 @@ def login_view(request):
         return render(request, 'auth/login.html', {'form': form})
 
     if request.method == 'POST':
-        # Handle form submission for POST requests
-        if request.content_type == 'application/json':
-            # JSON API request
-            form = AuthenticationForm(request, data=request.data)
-        else:
-            # Form submission (HTML POST)
-            form = AuthenticationForm(request, data=request.POST)
+        # Determine data source based on content type
+        data = request.data if request.content_type == 'application/json' else request.POST
+        form = AuthenticationForm(request, data=data)
 
         if form.is_valid():
             user = form.get_user()
-            token = Token.objects.get_or_create(user=user)[0]
+            # Generate or retrieve the token for the authenticated user
+            token, _ = Token.objects.get_or_create(user=user)
+
+            # Handle form-based login
+            login(request, user)
+            # Handle API login
             if request.content_type == 'application/json':
-                # Respond with JSON for API requests
                 return Response({
                     "message": "Login successful",
                     "user": {
@@ -221,24 +219,23 @@ def login_view(request):
                     },
                     "token": token.key
                 }, status=status.HTTP_200_OK)
-            else:
-                login(request, user)
-                # Redirect or render another page for HTML form submission
-                return redirect('index')
+
+            return redirect('index')
+
         else:
+            # Invalid credentials
             if request.content_type == 'application/json':
-                # Respond with JSON for invalid API request
                 return Response({
-                    "message": "Invalid username or password"
+                    "message": "Invalid username or password",
+                    "errors": form.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                messages.error(request, 'Invalid username or password')
-                # Re-render the login page with form errors for HTML
-                return render(request, 'auth/login.html', {'form': form})
+
+            messages.error(request, 'Invalid username or password')
+            return render(request, 'auth/login.html', {'form': form})
 
 
-@ login_required
-@ swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+@permission_classes([IsAuthenticated])
+@swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
     'first_name': openapi.Schema(type=openapi.TYPE_STRING, description='First Name'),
     'last_name': openapi.Schema(type=openapi.TYPE_STRING, description='Last Name'),
     'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email')
@@ -246,7 +243,7 @@ def login_view(request):
     responses={200: openapi.Response(description="Successful Response", schema=openapi.Schema(
         type=openapi.TYPE_OBJECT, properties={'message': openapi.Schema(type=openapi.TYPE_STRING, description='Message')}))},
     tags=["User Management"], operation_summary="Endpoint that allows a user to update their password")
-@ api_view(['POST'])
+@api_view(['POST'])
 def change_password(request):
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
@@ -264,14 +261,39 @@ def change_password(request):
     return render(request, 'change_password.html', {'form': form})
 
 
-@ login_required
+@swagger_auto_schema(method='post', tags=["Auth Management"], operation_summary="Endpoint that logs out a user")
+@permission_classes([IsAuthenticated])
+@api_view(['POST'])
 def logout_view(request):
-    if request.method == 'POST':
+    """
+    Handle logout for token-based users.
+    """
+    try:
+        # Perform operations that require a valid token
+        user = request.user
+
+        # For API requests
+        if request.content_type == 'application/json':
+            response_data = {"message": "Logged out successfully"}
+            status_code = status.HTTP_200_OK
+        else:
+            # For non-API requests, prepare a redirect response
+            response_data = redirect('login')
+
+        # Delete the token after preparing the response
         logout(request)
-        return redirect('login')
+        Token.objects.get(user=user).delete()
+
+        # Return the appropriate response
+        return Response(response_data, status=status_code) if isinstance(response_data, dict) else response_data
+
+    except Token.DoesNotExist:
+        return Response({"message": "Token does not exist or already invalidated"}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@ swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
+@swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
     'email': openapi.Schema(type=openapi.TYPE_STRING, description='Email')
 }, default={'email': 'johndoe@gmail.com'}), security=[],
     tags=["User Management"], operation_summary="Endpoint that sends a password reset link to a user's email", responses={
@@ -305,7 +327,7 @@ def logout_view(request):
         )
 }
 )
-@ api_view(['POST'])
+@api_view(['POST'])
 def password_reset_request(request):
     if request.method == "POST":
         password_reset_form = PasswordResetForm(request.POST)
@@ -341,9 +363,9 @@ def password_reset_request(request):
     return render(request, "auth/password_reset.html", {"form": password_reset_form})
 
 
-@ swagger_auto_schema(method='get', security=[],
-                      tags=["User Management"], operation_summary="Endpoint that allows a user to reset their password")
-@ api_view(['GET'])
+@swagger_auto_schema(method='get', security=[],
+                     tags=["User Management"], operation_summary="Endpoint that allows a user to reset their password")
+@api_view(['GET'])
 def password_reset_confirm(request, uidb64=None, token=None):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()

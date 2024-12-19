@@ -15,7 +15,7 @@ from eudr_backend.models import EUDRCollectionSiteModel, EUDRFarmBackupModel, EU
 from datetime import timedelta
 from eudr_backend.tasks import update_geoid
 from eudr_backend.util_classes import IsSuperUser
-from eudr_backend.utils import extract_data_from_file, flatten_multipolygon_coordinates, generate_access_code, handle_failed_file_entry, store_failed_file_in_s3, transform_csv_to_json, transform_db_data_to_geojson
+from eudr_backend.utils import extract_data_from_file, flatten_multipolygon_coordinates, generate_access_code, handle_failed_file_entry, store_file_in_s3, transform_csv_to_json, transform_db_data_to_geojson
 from eudr_backend.validators import validate_csv, validate_geojson
 from .serializers import (
     EUDRCollectionSiteModelSerializer,
@@ -571,7 +571,7 @@ def create_farm_data(request):
 
     if errors:
         # Custom function to handle S3 upload
-        store_failed_file_in_s3(file, request.user, file_name)
+        store_file_in_s3(file, request.user, file_name)
         return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
 
     if data_format == 'csv':
@@ -609,6 +609,7 @@ def create_farm_data(request):
     # Proceed with other operations...
     update_geoid(repeat=60,
                  user_id=request.user.username if request.user.is_authenticated else "admin")
+    store_file_in_s3(file, request.user, file_name, True) if file else None
     return Response({'message': 'File/data processed successfully', 'file_id': file_id}, status=status.HTTP_201_CREATED)
 
 
@@ -1475,14 +1476,32 @@ def retrieve_map_data(request):
                 },
             ),
         ),
+        404: openapi.Response(
+            description="Farm does not exist",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "message": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "message": "Farm does not exist",
+                },
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def retrieve_farm_detail(request, pk):
-    data = EUDRFarmModel.objects.get(id=pk)
-    serializer = EUDRFarmModelSerializer(data, many=False)
-    return Response(serializer.data)
+    try:
+        data = EUDRFarmModel.objects.get(id=pk)
+        serializer = EUDRFarmModelSerializer(data, many=False)
+        return Response(serializer.data)
+    except EUDRFarmModel.DoesNotExist:
+        return Response({'message': 'Farm does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @swagger_auto_schema(
@@ -1517,15 +1536,32 @@ def retrieve_farm_detail(request, pk):
                 ),
             ),
         ),
+        404: openapi.Response(
+            description="Farm does not exist",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "message": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+            examples={
+                "application/json": {
+                    "message": "Farm does not exist",
+                },
+            },
+        ),
     },
     tags=["Farm Data Management"]
 )
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def retrieve_farm_data_from_file_id(request, pk):
-    data = EUDRFarmModel.objects.filter(file_id=pk)
-    serializer = EUDRFarmModelSerializer(data, many=True)
-    return Response(serializer.data)
+    try:
+        data = EUDRFarmModel.objects.filter(file_id=pk)
+        serializer = EUDRFarmModelSerializer(data, many=True)
+        return Response(serializer.data)
+    except EUDRFarmModel.DoesNotExist:
+        return Response({'message': 'Farm does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @swagger_auto_schema(

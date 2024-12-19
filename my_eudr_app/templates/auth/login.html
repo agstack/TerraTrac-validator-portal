@@ -91,9 +91,7 @@
             <div class="d-flex flex-column align-items-center">
               {% csrf_token %}
               <!-- error container -->
-              {% if messages %} {% for message in messages %}
-              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-              {% endfor %} {% endif %}
+              <div id="errors-container"></div>
               <div class="form-group">
                 <label for="id_username">Email</label>
                 <input
@@ -186,5 +184,44 @@
     ></script>
     <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
     <script src="{% static 'assets/js/argon-dashboard.js' %}"></script>
+    <script>
+      document
+        .querySelector("form")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const formData = new FormData(event.target);
+          const data = Object.fromEntries(formData.entries());
+          const errorContainer = document.getElementById("errors-container");
+          errorContainer.innerHTML = "";
+
+          const response = await fetch('{% url "login" %}', {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.token) {
+              // Store the token in localStorage
+              localStorage.setItem("terratracAuthToken", result.token);
+
+              window.location.href = "/";
+            }
+          } else {
+            const error = await response.json();
+            if (error?.message) {
+              errorContainer.innerHTML = `
+    <div class="alert alert-danger" role="alert">
+      ${error?.message}
+    </div>`;
+            }
+          }
+        });
+    </script>
   </body>
 </html>

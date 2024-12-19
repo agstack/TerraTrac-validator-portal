@@ -3,16 +3,18 @@ import folium
 import geemap.foliumap as geemap
 from django.http import JsonResponse
 from django.utils import timezone
-from django.contrib.auth.decorators import login_required
 import requests
 from shapely import Polygon
 from eudr_backend.utils import flatten_multipolygon_coordinates, is_valid_polygon, reverse_polygon_points
 from eudr_backend.settings import initialize_earth_engine
 from my_eudr_app.ee_images import combine_commodities_images, combine_disturbances_after_2020_images, combine_disturbances_before_2020_images, combine_forest_cover_images
 from eudr_backend.models import EUDRSharedMapAccessCodeModel
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 
-@login_required
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def map_view(request):
     fileId = request.GET.get('file-id')
     accessCode = request.GET.get('access-code')
@@ -58,8 +60,8 @@ def map_view(request):
     try:
         # Fetch data from the RESTful API endpoint.
         base_url = f"{request.scheme}://{request.get_host()}"
-        response = requests.get(f"""{base_url}/api/farm/map/list/""") if not fileId and not farmId else requests.get(f"""{base_url}/api/farm/list/{farmId}""") if farmId else requests.get(
-            f"""{base_url}/api/farm/list/file/{fileId}/""") if not overLap else requests.get(f"""{base_url}/api/farm/overlapping/{fileId}/""")
+        response = requests.get(f"""{base_url}/api/farm/map/list/""", headers={'Authorization': f"Token {request.user.auth_token}"}) if not fileId and not farmId else requests.get(f"""{base_url}/api/farm/list/{farmId}""", headers={'Authorization': f"Token {request.user.auth_token}"}) if farmId else requests.get(
+            f"""{base_url}/api/farm/list/file/{fileId}/""", headers={'Authorization': f"Token {request.user.auth_token}"}) if not overLap else requests.get(f"""{base_url}/api/farm/overlapping/{fileId}/""", headers={'Authorization': f"Token {request.user.auth_token}"})
         if response.status_code == 200:
             farms = [response.json()] if farmId else response.json()
             if len(farms) > 0:
@@ -155,8 +157,11 @@ def map_view(request):
 
                         if farm['polygon_type'] != 'Point':
                             farm_polygon = Polygon(polygon[0])
-                            is_overlapping = any(farm_polygon.overlaps(
-                                Polygon(other_farm['polygon'][0])) for other_farm in farms)
+                            try:
+                                is_overlapping = any(farm_polygon.overlaps(
+                                    Polygon(other_farm['polygon'][0])) for other_farm in farms)
+                            except BaseException as e:
+                                is_overlapping = False
 
                             # Define GeoJSON data for Folium
                             js = {
@@ -240,6 +245,8 @@ def map_view(request):
             print("Failed to fetch data from the API")
     except BaseException:
         return JsonResponse({"message": "Failed to fetch data from the API"}, status=500)
+    except Exception as e:
+        return JsonResponse({"message": "An error occurred"}, status=500)
 
     # Add protected areas layer
     protected_areas_vis = {'palette': ['#585858']}

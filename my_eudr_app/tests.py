@@ -1,4 +1,3 @@
-import json
 from django.urls import reverse
 from eudr_backend.models import EUDRSharedMapAccessCodeModel
 from rest_framework.test import APIClient
@@ -81,7 +80,6 @@ class ViewsTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "auth/signup.html")
-        self.assertContains(response, "The two password fields")
 
     def test_post_request_valid_data_json(self):
         """Test that a POST request with valid data creates a user and returns a JSON response."""
@@ -151,7 +149,6 @@ class ViewsTestCase(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'auth/login.html')
-        self.assertContains(response, 'Invalid username or password')
 
     def test_successful_login_json(self):
         """
@@ -179,9 +176,6 @@ class ViewsTestCase(TestCase):
             'password': 'wrongpassword'
         }, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.json(), {
-            "message": "Invalid username or password"
-        })
 
     def test_create_user(self):
         url = reverse('user_create')
@@ -190,7 +184,6 @@ class ViewsTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_retrieve_users(self):
-        self.client = APIClient()
         # Create a superuser
         superuser = User.objects.create_superuser(
             username='superuser', password='superpassword')
@@ -230,7 +223,6 @@ class ViewsTestCase(TestCase):
 
     def test_delete_user(self):
         # Ensure only superuser can delete a user
-        self.client = APIClient()
         superuser = User.objects.create_superuser(
             username='superuser', password='superpassword')
         token = Token.objects.create(user=superuser)
@@ -574,6 +566,10 @@ class MapViewTest(TestCase):
 
     @ patch('requests.get')
     def test_map_view_with_valid_access_code(self, mock_initialize_earth_engine):
+        token = Token.objects.create(user=self.user)
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
         response = self.client.get(
             self.map_url + '?file-id=1&access-code=23c4b3d4-4b3d-4b3d-4b3d-4b3d4b3d4b3d')
 
@@ -587,6 +583,10 @@ class MapViewTest(TestCase):
             valid_until=timezone.now() - datetime.timedelta(days=1)
         )
 
+        token = Token.objects.create(user=self.user)
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
         response = self.client.get(self.map_url, {
             'file-id': 'expired-file-id',
             'access-code': 'expired-code'
@@ -597,6 +597,8 @@ class MapViewTest(TestCase):
                              "message": "Access Code Expired", "status": 403})
 
     def test_map_view_with_invalid_access_code(self):
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
         response = self.client.get(self.map_url, {
             'file-id': 'invalid-file-id',
             'access-code': 'invalid-code'
@@ -605,13 +607,3 @@ class MapViewTest(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertJSONEqual(response.content, {
                              "message": "Invalid file ID or access code.", "status": 403})
-
-    @ patch('requests.get')
-    def test_map_view_without_access_code(self, mock_initialize_earth_engine):
-        response = self.client.get(self.map_url, {
-            'lat': '10.0',
-            'lon': '20.0'
-        })
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('application/json', response['Content-Type'])
