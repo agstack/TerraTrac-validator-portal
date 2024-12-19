@@ -20,10 +20,29 @@ if (mapMonde) {
   }
 }
 
-document.getElementById("logout").addEventListener("click", function (event) {
-  event.preventDefault();
-  document.getElementById("logout-form").submit();
-});
+document
+  .getElementById("logout")
+  .addEventListener("click", async function (event) {
+    event.preventDefault();
+
+    const response = await fetch("/logout/", {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+      },
+    });
+    if (response.ok) {
+      // remove the user's token from the local storage
+      localStorage.removeItem("terratracAuthToken");
+      window.location.href = "/auth/login";
+    } else {
+      // if the response is 401, the user is not authenticated, redirect to the login page
+      if (response.status === 401) {
+        localStorage.removeItem("terratracAuthToken");
+        window.location.href = "/auth/login";
+      }
+    }
+  });
 
 document.getElementById("profile").addEventListener("click", function () {
   window.location.href = profileUrl;
@@ -210,6 +229,7 @@ function sendDataToAPI(data, file_name, format, file) {
     method: "POST",
     headers: {
       "X-CSRFToken": csrftoken,
+      Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
     },
     body: formData,
   })
@@ -410,11 +430,29 @@ const colorClasses = {
 
 let response = null;
 if (fileId) {
-  response = fetch(`/api/farm/list/file/${fileId}`);
+  response = fetch(`/api/farm/list/file/${fileId}/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+    },
+  });
 } else {
   response = userId
-    ? fetch(`/api/farm/list/user/${userId}`)
-    : fetch("/api/farm/list/");
+    ? fetch(`/api/farm/list/user/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+        },
+      })
+    : fetch("/api/farm/list/", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+        },
+      });
 }
 
 if (response) {
@@ -568,7 +606,15 @@ if (response) {
                   }
                 );
                 fullpageLoaderModal.show();
-                fetch(`/api/farm/revalidate/${fileId}/`)
+                fetch(`/api/farm/revalidate/${fileId}/`, {
+                  method: "GET",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Token ${localStorage.getItem(
+                      "terratracAuthToken"
+                    )}`,
+                  },
+                })
                   .then((resp) => {
                     if (!resp.ok) {
                       // close fullpageLoaderModal
@@ -625,7 +671,13 @@ if (response) {
 }
 
 function checkOverLappingFarms(fileId) {
-  fetch(`/api/farm/overlapping/${fileId}/`)
+  fetch(`/api/farm/overlapping/${fileId}/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+    },
+  })
     .then((resp) => {
       if (!resp.ok) {
         throw new Error("Network response was not ok");
@@ -1105,7 +1157,13 @@ function generateData(farmData, farmsContainer) {
 
 const filesContainer = document.getElementById("filesContainer");
 
-fetch("/api/files/list/")
+fetch("/api/files/list/", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+  },
+})
   .then((response) => {
     if (!response.ok) {
       throw new Error("Network response was not ok");
@@ -1194,7 +1252,13 @@ fetch("/api/files/list/")
 
 const allFilesContainer = document.getElementById("allFilesContainer");
 
-fetch("/api/files/list/all/")
+fetch("/api/files/list/all/", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+  },
+})
   .then((response) => {
     if (!response.ok) {
       throw new Error("Network response was not ok");
@@ -1290,34 +1354,41 @@ fetch("/api/files/list/all/")
 
 const usersContainer = document.getElementById("usersContainer");
 
-fetch("/api/users/")
-  .then((response) => {
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    return response.json();
+if (document.querySelector("#total_users") || usersContainer) {
+  fetch("/api/users/", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+    },
   })
-  .then((data) => {
-    let i = 0;
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      let i = 0;
 
-    if (document.querySelector("#total_users")) {
-      document.querySelector("#total_users").innerText = data.length;
-    }
+      if (document.querySelector("#total_users")) {
+        document.querySelector("#total_users").innerText = data.length;
+      }
 
-    if (usersContainer) {
-      // remove loading spinner
-      usersContainer.innerHTML = "";
+      if (usersContainer) {
+        // remove loading spinner
+        usersContainer.innerHTML = "";
 
-      while (i < data.length) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
+        while (i < data.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
               <td>
                 <p class="text-xs font-weight-bold px-3 mb-0">${i + 1}.</p>
               </td>
               <td>
                   <h6 class="mb-0 text-sm">${data[i].first_name} ${
-          data[i].last_name
-        }</h6>
+            data[i].last_name
+          }</h6>
               </td>
               <td>
                 <p class="text-xs font-weight-bold mb-0">${data[i].username}</p>
@@ -1358,38 +1429,48 @@ fetch("/api/users/")
               </td>
           `;
 
-        usersContainer.appendChild(tr);
-        i++;
-      }
+          usersContainer.appendChild(tr);
+          i++;
+        }
 
-      $("#users").DataTable({
-        language: {
-          //customize pagination prev and next buttons: use arrows instead of words
-          paginate: {
-            previous: '<span class="fa fa-chevron-left"></span>',
-            next: '<span class="fa fa-chevron-right"></span>',
+        $("#users").DataTable({
+          language: {
+            //customize pagination prev and next buttons: use arrows instead of words
+            paginate: {
+              previous: '<span class="fa fa-chevron-left"></span>',
+              next: '<span class="fa fa-chevron-right"></span>',
+            },
+            //customize number of elements to be displayed
+            lengthMenu:
+              'Display <select class="form-control input-sm">' +
+              '<option value="10">10</option>' +
+              '<option value="20">20</option>' +
+              '<option value="30">30</option>' +
+              '<option value="40">40</option>' +
+              '<option value="50">50</option>' +
+              '<option value="-1">All</option>' +
+              "</select> results",
           },
-          //customize number of elements to be displayed
-          lengthMenu:
-            'Display <select class="form-control input-sm">' +
-            '<option value="10">10</option>' +
-            '<option value="20">20</option>' +
-            '<option value="30">30</option>' +
-            '<option value="40">40</option>' +
-            '<option value="50">50</option>' +
-            '<option value="-1">All</option>' +
-            "</select> results",
-        },
-      });
-    }
-  })
-  .catch((error) => {
-    console.error("There was a problem with the fetch users operation:", error);
-  });
+        });
+      }
+    })
+    .catch((error) => {
+      console.error(
+        "There was a problem with the fetch users operation:",
+        error
+      );
+    });
+}
 
 const backupsContainer = document.getElementById("backupsContainer");
 
-fetch("/api/collection_sites/list")
+fetch("/api/collection_sites/list", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+  },
+})
   .then((response) => {
     if (!response.ok) {
       throw new Error("Network response was not ok");
@@ -1451,8 +1532,8 @@ fetch("/api/collection_sites/list")
             </td>
             <td class="align-middle text-center">
               <a href="${backupDetailsUrl}?cs-id=${
-                data[i].id
-              }" class="text-primary font-weight-bold text-lg" title="View Details"><i class="bi bi-list"></i></a>
+          data[i].id
+        }" class="text-primary font-weight-bold text-lg" title="View Details"><i class="bi bi-list"></i></a>
             </td>
       `;
 
@@ -1494,7 +1575,13 @@ const backupDetailsContainer = document.getElementById(
 const queryParams = new URLSearchParams(window.location.search);
 
 if (queryParams.get("cs-id")) {
-  fetch(`/api/farm/sync/list/${queryParams.get("cs-id")}`)
+  fetch(`/api/farm/sync/list/${queryParams.get("cs-id")}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+    },
+  })
     .then((response) => {
       if (!response.ok) {
         throw new Error("Network response was not ok");
@@ -1618,6 +1705,10 @@ if (window.location.pathname === "/map/") {
       "farm-id": farmId,
       lat: lat,
       lon: lon,
+    },
+    headers: {
+      "X-CSRFToken": getCookie("csrftoken"),
+      Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
     },
     success: function (data) {
       if (data.error) {
@@ -1784,6 +1875,10 @@ if (window.location.pathname === "/map/share/") {
     data: {
       "file-id": fileId,
       "access-code": accessCode,
+    },
+    headers: {
+      "X-CSRFToken": getCookie("csrftoken"),
+      Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
     },
     success: function (data) {
       if (data.error) {

@@ -27,6 +27,9 @@ class IntegrationTests(TestCase):
         self.assertTrue('_auth_user_id' in self.client.session)
 
         # Logout
+        token = Token.objects.get(user__username='testuser')
+        self.client = APIClient()
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
         logout_response = self.client.post(reverse('logout'))
         self.assertEqual(logout_response.status_code, 302)
         self.assertFalse('_auth_user_id' in self.client.session)

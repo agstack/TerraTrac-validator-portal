@@ -206,7 +206,13 @@ function initMap() {
         };
         legend.addTo(map);
 
-        fetch("/api/farm/list/")
+        fetch("/api/farm/list/", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${localStorage.getItem("terratracAuthToken")}`,
+          },
+        })
           .then((response) => {
             if (!response.ok) {
               throw new Error("Network response failed");
