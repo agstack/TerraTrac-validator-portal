@@ -27653,6 +27653,14 @@ pre[class*="language-"] {
   width: 100%;
 }
 
+.geoid-sel {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* MS supports */
 @supports (-ms-overflow-style: none) {
   .ps {

@@ -1049,11 +1049,12 @@ function generateData(farmData, farmsContainer) {
   while (i < farmData.length) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
+            <td></td>
             <td>
               <p class="text-xs text-center font-weight-bold mb-0">${i + 1}.</p>
             </td>
             <td>
-              <p class="text-xs font-weight-bold mb-0">${
+              <p class="text-xs font-weight-bold mb-0 geoid-sel">${
                 farmData[i].geoid || "N/A"
               }</p>
             </td>
@@ -1130,11 +1131,24 @@ function generateData(farmData, farmsContainer) {
     i++;
   }
 
-  $("#farms").DataTable({
+  const tableCustoms = $("#farms").DataTable({
     // add loading spinner while table is being loaded
     processing: true,
     //disable sorting on last column
-    columnDefs: [{ orderable: false, targets: 5 }],
+    columnDefs: [
+      {
+        targets: 0,
+        className: "dt-control",
+        orderable: false,
+        data: null,
+        defaultContent: "",
+      },
+      {
+        targets: [4, 5, 6, 7],
+        visible: false,
+      },
+    ],
+    order: [[1, "asc"]],
     language: {
       //customize pagination prev and next buttons: use arrows instead of words
       paginate: {
@@ -1152,6 +1166,31 @@ function generateData(farmData, farmsContainer) {
         '<option value="-1">All</option>' +
         "</select> results",
     },
+  });
+
+  function format(rowData) {
+    return `
+        <div class="accordion-content">
+            <div><b>Farm Size (Ha):</b> ${rowData[4]}</div>
+            <div><b>Site Name:</b> ${rowData[5]}</div>
+            <div><b>Village:</b> ${rowData[6]}</div>
+            <div><b>District:</b> ${rowData[7]}</div>
+        </div>`;
+  }
+
+  $("#farms tbody").on("click", "td.dt-control", function () {
+    const tr = $(this).closest("tr");
+    const row = tableCustoms.row(tr);
+
+    if (row.child.isShown()) {
+      // Close the accordion
+      row.child.hide();
+      tr.removeClass("shown");
+    } else {
+      // Open the accordion
+      row.child(format(row.data())).show();
+      tr.addClass("shown");
+    }
   });
 }
 
