@@ -27640,6 +27640,19 @@ pre[class*="language-"] {
   color: #333;
 }
 
+.accordion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 5px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+}
+
+.accordion-content div {
+  width: 100%;
+}
+
 /* MS supports */
 @supports (-ms-overflow-style: none) {
   .ps {
@@ -28060,7 +28073,7 @@ thead {
 }
 .message-subtitle {
   font-size: 1.4em;
-  color: #26275C;
+  color: #26275c;
   margin: 0;
 }
 .rivet {
@@ -28104,7 +28117,7 @@ thead {
   height: 40px;
   bottom: 20px;
   margin-left: 10px;
-  background-color: #40414D;
+  background-color: #40414d;
   border-radius: 50px;
   color: #fff;
   cursor: pointer;
@@ -28143,6 +28156,5 @@ thead {
   gap: 10px;
   align-items: center;
 }
-
 
 /*# sourceMappingURL=argon-dashboard.css.map */
