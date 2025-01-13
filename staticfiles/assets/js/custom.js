@@ -1494,7 +1494,7 @@ fetch("/api/collection_sites/list", {
         tr.innerHTML = `
             <td></td>
             <td>
-              <p class="text-xs font-weight-bold px-3 mb-0">${i + 1}.</p>
+              <p class="text-xs font-weight-bold mb-0">${data[i].device_id}</p>
             </td>
             <td>
               <h6 class="mb-0 text-sm">${data[i].name}</h6>
@@ -1511,9 +1511,6 @@ fetch("/api/collection_sites/list", {
               <p class="text-xs font-weight-bold mb-0">${
                 data[i].phone_number || "N/A"
               }</p>
-            </td>
-            <td>
-              <p class="text-xs font-weight-bold mb-0">${data[i].device_id}</p>
             </td>
             <td>
               <p class="text-xs font-weight-bold mb-0">${data[i].village}</p>
@@ -1547,7 +1544,7 @@ fetch("/api/collection_sites/list", {
             defaultContent: "",
           },
           {
-            targets: [6, 7, 8],
+            targets: [2, 3, 4, 5, 6, 7],
             visible: false,
           },
         ],
@@ -1574,9 +1571,12 @@ fetch("/api/collection_sites/list", {
       function format(rowData) {
         return `
             <div class="accordion-content">
-                <div><b>Device ID:</b> ${rowData[6]}</div>
-                <div><b>Village:</b> ${rowData[7]}</div>
-                <div><b>District:</b> ${rowData[8]}</div>
+                <div><b>Site Name:</b> ${rowData[2]}</div>
+                <div><b>Agent Name:</b> ${rowData[3]}</div>
+                <div><b>Email:</b> ${rowData[4]}</div>
+                <div><b>Phone Number:</b> ${rowData[5]}</div>
+                <div><b>Village:</b> ${rowData[6]}</div>
+                <div><b>District:</b> ${rowData[7]}</div>
             </div>`;
       }
 
