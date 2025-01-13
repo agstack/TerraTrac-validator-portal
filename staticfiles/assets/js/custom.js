@@ -1492,6 +1492,7 @@ fetch("/api/collection_sites/list", {
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
+            <td></td>
             <td>
               <p class="text-xs font-weight-bold px-3 mb-0">${i + 1}.</p>
             </td>
@@ -1522,11 +1523,6 @@ fetch("/api/collection_sites/list", {
             </td>
             <td>
               <p class="text-xs font-weight-bold mb-0">${new Date(
-                data[i].created_at
-              ).toLocaleString()}</p>
-            </td>
-            <td>
-              <p class="text-xs font-weight-bold mb-0">${new Date(
                 data[i].updated_at
               ).toLocaleString()}</p>
             </td>
@@ -1541,7 +1537,21 @@ fetch("/api/collection_sites/list", {
         i++;
       }
 
-      $("#backups").DataTable({
+      const tableCustoms = $("#backups").DataTable({
+        columnDefs: [
+          {
+            targets: 0,
+            className: "dt-control",
+            orderable: false,
+            data: null,
+            defaultContent: "",
+          },
+          {
+            targets: [6, 7, 8],
+            visible: false,
+          },
+        ],
+        order: [[1, "asc"]],
         language: {
           //customize pagination prev and next buttons: use arrows instead of words
           paginate: {
@@ -1559,6 +1569,30 @@ fetch("/api/collection_sites/list", {
             '<option value="-1">All</option>' +
             "</select> results",
         },
+      });
+
+      function format(rowData) {
+        return `
+            <div class="accordion-content">
+                <div><b>Device ID:</b> ${rowData[6]}</div>
+                <div><b>Village:</b> ${rowData[7]}</div>
+                <div><b>District:</b> ${rowData[8]}</div>
+            </div>`;
+      }
+
+      $("#backups tbody").on("click", "td.dt-control", function () {
+        const tr = $(this).closest("tr");
+        const row = tableCustoms.row(tr);
+
+        if (row.child.isShown()) {
+          // Close the accordion
+          row.child.hide();
+          tr.removeClass("shown");
+        } else {
+          // Open the accordion
+          row.child(format(row.data())).show();
+          tr.addClass("shown");
+        }
       });
     }
   })
