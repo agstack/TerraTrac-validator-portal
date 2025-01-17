@@ -1672,6 +1672,7 @@ if (queryParams.get("cs-id")) {
           const tr = document.createElement("tr");
 
           tr.innerHTML = `
+                <td></td>
                 <td>
                   <p class="text-xs font-weight-bold px-3 mb-0">${i + 1}.</p>
                 </td>
@@ -1718,11 +1719,6 @@ if (queryParams.get("cs-id")) {
                 </td>
                 <td>
                   <p class="text-xs font-weight-bold mb-0">${new Date(
-                    data[i].created_at
-                  ).toLocaleString()}</p>
-                </td>
-                <td>
-                  <p class="text-xs font-weight-bold mb-0">${new Date(
                     data[i].updated_at
                   ).toLocaleString()}</p>
                 </td>
@@ -1732,7 +1728,21 @@ if (queryParams.get("cs-id")) {
           i++;
         }
 
-        $("#backup_details").DataTable({
+        const tableCustoms = $("#backup_details").DataTable({
+          columnDefs: [
+            {
+              targets: 0,
+              className: "dt-control",
+              orderable: false,
+              data: null,
+              defaultContent: "",
+            },
+            {
+              targets: [6, 7, 8, 9, 10],
+              visible: false,
+            },
+          ],
+          order: [[1, "asc"]],
           language: {
             //customize pagination prev and next buttons: use arrows instead of words
             paginate: {
@@ -1750,6 +1760,33 @@ if (queryParams.get("cs-id")) {
               '<option value="-1">All</option>' +
               "</select> results",
           },
+        });
+
+        function format(rowData) {
+          console.log(rowData);
+          return `
+              <div class="accordion-content">
+                  <div><b>Village:</b> ${rowData[6]}</div>
+                  <div><b>District:</b> ${rowData[7]}</div>
+                  <div><b>Latitude:</b> ${rowData[8]}</div>
+                  <div><b>Longitude:</b> ${rowData[9]}</div>
+                  <div><b>Has Polygon:</b> ${rowData[10] ? "Yes" : "No"}</div>
+              </div>`;
+        }
+
+        $("#backup_details tbody").on("click", "td.dt-control", function () {
+          const tr = $(this).closest("tr");
+          const row = tableCustoms.row(tr);
+
+          if (row.child.isShown()) {
+            // Close the accordion
+            row.child.hide();
+            tr.removeClass("shown");
+          } else {
+            // Open the accordion
+            row.child(format(row.data())).show();
+            tr.addClass("shown");
+          }
         });
       }
     })
