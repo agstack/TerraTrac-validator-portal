@@ -192,41 +192,55 @@ def map_view(request):
                             )
                             folium.Popup(
                                 html=f"""
-                <b><i><u>Plot Info:</u></i></b><br><br>
-                                <b>GeoID:</b> {farm['geoid']}<br>
-                                <b>Farmer Name:</b> {farm['farmer_name']}<br>
-                <b>Farm Size:</b> {farm['farm_size']}<br>
-                <b>Collection Site:</b> {farm['collection_site']}<br>
-                <b>Agent Name:</b> {farm['agent_name']}<br>
-                <b>Farm Village:</b> {farm['farm_village']}<br>
-                <b>District:</b> {farm['farm_district']}<br>
+                    <div class='bg-dark rounded p-2 text-white fs-4 mb-2'>Plot Info</div>
+                    <div class='d-flex justify-content-between mb-2'><b>GeoID:</b> <span class='align-self-end'>{farm['geoid']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Farmer Name:</b> <span class='align-self-end'>{farm['farmer_name']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Farm Size:</b> <span class='align-self-end'>{farm['farm_size']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Collection Site:</b> <span class='align-self-end'>{farm['collection_site']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Agent Name:</b> <span class='align-self-end'>{farm['agent_name']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Farm Village:</b> <span class='align-self-end'>{farm['farm_village']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>District:</b> <span class='align-self-end'>{farm['farm_district']}</span></div>
                 {'<b>N.B:</b> <i>This is a Multi Polygon Type Plot</i>' if farm['polygon_type'] == 'MultiPolygon' else ''}
                 <br><br>
-                <b><i><u>Farm Analysis:</u></i></b><br>
+                <div class='bg-dark rounded p-2 text-white fs-4 mb-2'>Farm Analysis</div>
                 {
-                                    "<br>".join([f"<b>{key.replace('_', ' ').capitalize(
-                                    )}:</b> {str(value).replace('_', ' ').title() if value else 'No'}" for key, value in farm['analysis'].items()])
+                                    "".join([
+                                        f"<div class='d-flex justify-content-between mb-2'><b>{
+                                            key.replace('_', ' ').capitalize()}:</b> "
+                                        f"<span class='align-self-end'>"
+                                        f"{f'<span class=\"rounded px-2 py-1 text-white' + (' bg-success' if value.lower() == 'low' else ' bg-danger' if value.lower(
+                                        ) == 'high' else ' bg-info') + '\">' + value.title().replace('_', ' ') + '</span>' if key == 'eudr_risk_level' else str(value).replace('_', ' ').title() if value else '-'}"
+                                        f"</span></div>"
+                                        for key, value in farm['analysis'].items()
+                                    ])
                                 }
-                """, max_width="500").add_to(geo_pol)
+                """, min_width="300", max_width="500").add_to(geo_pol)
                             geo_pol.add_to(m)
                     else:
                         folium.Marker(
                             location=[farm['latitude'], farm['longitude']],
                             popup=folium.Popup(html=f"""
-                <b><i><u>Plot Info:</u></i></b><br><br>
-                                <b>GeoID:</b> {farm['geoid']}<br>
-                                <b>Farmer Name:</b> {farm['farmer_name']}<br>
-                <b>Farm Size:</b> {farm['farm_size']}<br>
-                <b>Collection Site:</b> {farm['collection_site']}<br>
-                <b>Agent Name:</b> {farm['agent_name']}<br>
-                <b>Farm Village:</b> {farm['farm_village']}<br>
-                <b>District:</b> {farm['farm_district']}<br><br>
-                <b><i><u>Farm Analysis:</u></i></b><br>
+                <div class='bg-dark rounded p-2 text-white fs-4 mb-2'>Plot Info</div>
+                    <div class='d-flex justify-content-between mb-2'><b>GeoID:</b> <span class='align-self-end'>{farm['geoid']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Farmer Name:</b> <span class='align-self-end'>{farm['farmer_name']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Farm Size:</b> <span class='align-self-end'>{farm['farm_size']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Collection Site:</b> <span class='align-self-end'>{farm['collection_site']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Agent Name:</b> <span class='align-self-end'>{farm['agent_name']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>Farm Village:</b> <span class='align-self-end'>{farm['farm_village']}</span></div>
+                    <div class='d-flex justify-content-between mb-2'><b>District:</b> <span class='align-self-end'>{farm['farm_district']}</span></div>
+                <div class='bg-dark rounded p-2 text-white fs-4 mb-2'>Farm Analysis</div>
                 {
-                                "<br>".join([f"<b>{key.replace('_', ' ').capitalize(
-                                )}:</b> {str(value).replace('_', ' ').title() if value else 'No'}" for key, value in farm['analysis'].items()])
+                                "".join([
+                                    f"<div class='d-flex justify-content-between mb-2'><b>{
+                                        key.replace('_', ' ').capitalize()}:</b> "
+                                    f"<span class='align-self-end'>"
+                                    f"{f'<span class=\"rounded px-2 py-1 text-white' + (' bg-success' if value.lower() == 'low' else ' bg-danger' if value.lower(
+                                    ) == 'high' else ' bg-info') + '\">' + value.title().replace('_', ' ') + '</span>' if key == 'eudr_risk_level' else str(value).replace('_', ' ').title() if value else '-'}"
+                                    f"</span></div>"
+                                    for key, value in farm['analysis'].items()
+                                ])
                             }
-                """, max_width="500", show=True if farmId or (not farmId and farms.index(farm) == 0) else False
+                """, min_width="300", max_width="500", show=True if farmId or (not farmId and farms.index(farm) == 0) else False
                             ),
                             icon=folium.Icon(color='green' if farm['analysis']['eudr_risk_level'] ==
                                              'low' else 'red' if farm['analysis']['eudr_risk_level'] == 'high' else 'lightblue', icon='leaf'),
