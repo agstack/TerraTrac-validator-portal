@@ -718,7 +718,6 @@ def create_farm_data(request):
     tags=["Farm Data Management"]
 )
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
 def sync_farm_data(request):
     sync_results = []
     data = request.data
@@ -838,7 +837,6 @@ def sync_farm_data(request):
     tags=["Farm Data Management"]
 )
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
 def restore_farm_data(request):
     device_id = request.data.get("device_id")
     phone_number = request.data.get("phone_number")
