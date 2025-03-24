@@ -16,6 +16,38 @@
 {% extends 'base.html' %} {% block title %}Dashboard{% endblock %} {% block additional_title_content %}
 Dashboard
 {% endblock %} {% block content %}
+
+<!-- Date Filter Form -->
+<div class="row px-4 mb-4">
+  <div class="col-12">
+      <div class="card">
+          <div class="card-header py-2">
+              <h6 class="mb-0">Filter Dashboard by Date</h6>
+          </div>
+          <div class="card-body py-2">
+              <form id="filterForm">
+                  <div class="row g-2 align-items-end">
+                      <div class="col-md-5">
+                          <label for="startDate" class="form-label">From</label>
+                          <input type="date" class="form-control form-control-sm" id="startDate" name="startDate">
+                      </div>
+                      <div class="col-md-5">
+                          <label for="endDate" class="form-label">To</label>
+                          <input type="date" class="form-control form-control-sm" id="endDate" name="endDate">
+                      </div>
+                      <div class="col-md-1 d-flex justify-content-end">
+                          <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                      </div>
+                      <div class="col-md-1 d-flex justify-content-end">
+                          <button type="button" id="resetFilter" class="btn btn-primary btn-sm">Reset</button>
+                      </div>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="row px-4 mb-4">
     <div class="col-xl-4 col-sm-6 mb-xl-0 mb-4">
@@ -201,5 +233,63 @@ Dashboard
     </div>
   </div>
 </div>
+
+<!-- JavaScript to Handle Filtering -->
+
+<script>
+  document
+    .getElementById("filterForm")
+    .addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const startDate = document.getElementById("startDate").value;
+      const endDate = document.getElementById("endDate").value;
+
+      // Fetch filtered data from the server
+      fetch(
+        `/api/dashboard/metrics/?startDate=${startDate}&endDate=${endDate}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${localStorage.getItem(
+              "terratracAuthToken"
+            )}`,
+          },
+        }
+      )
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("data",data);
+          // Update the dashboard metrics with the filtered data
+          document.getElementById("total_farms").innerText =
+            data.total_farms || "0";
+          document.getElementById("total_files_uploaded").innerText =
+            data.total_files_uploaded || "0";
+          document.getElementById("low_farms_rate").innerText =
+            data.low_farms_rate ? `${data.low_farms_rate}%` : "-%";
+          document.getElementById("total_users").innerText =
+            data.total_users || "0";
+          document.getElementById("all_files_uploaded").innerText =
+            data.all_files_uploaded || "0";
+          document.getElementById("total_backups").innerText =
+            data.total_backups || "0";
+        })
+        .catch((error) => {
+          console.error("There was a problem with the fetch operation:", error);
+        });
+    });
+
+  document.getElementById("resetFilter").addEventListener("click", function () {
+    document.getElementById("startDate").value = "";
+    document.getElementById("endDate").value = "";
+    document.getElementById("filterForm").submit(); //Or reload the page, or run filter with default values.
+  });
+</script>
 
 {% endblock %}
