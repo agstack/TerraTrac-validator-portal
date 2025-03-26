@@ -132,7 +132,7 @@ All Uploads
 </div>
 
 <script>
-  document
+  {% comment %} document
     .getElementById("filterForm")
     .addEventListener("submit", function (event) {
       event.preventDefault();
@@ -168,7 +168,7 @@ All Uploads
 
           if (!Array.isArray(data) || data.length === 0) {
             allFilesContainer.innerHTML =
-              '<tr><td colspan="10" class="text-center">No Files available</td></tr>';
+              '<tr><td colspan="7" class="text-center">No Files available</td></tr>';
           } else {
             // Populate the table with filtered data
             data.forEach((file, index) => {
@@ -203,7 +203,7 @@ All Uploads
                         ).toLocaleString()}</p>
                     </td>
                     <td class="text-center">
-                        <a href="${fileDetailsUrl}?file-id=${
+                        <a href="${file.url}?file-id=${
                 file.id
               }" class="text-primary font-weight-bold text-lg" title="View Details">
                             <i class="bi bi-list"></i>
@@ -269,7 +269,7 @@ All Uploads
     document.getElementById("startDate").value = "";
     document.getElementById("endDate").value = "";
     document.getElementById("filterForm").submit(); // Or reload the page, or run filter with default values.
-  });
+  }); {% endcomment %}
 </script>
 
 

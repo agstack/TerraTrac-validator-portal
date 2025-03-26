@@ -146,7 +146,7 @@ Validated Files
 </div>
 
 
-<script>
+{% comment %} <script>
   document
     .getElementById("filterForm")
     .addEventListener("submit", function (event) {
@@ -278,6 +278,6 @@ Validated Files
     document.getElementById("endDate").value = "";
     document.getElementById("filterForm").submit(); // Or reload the page, or run filter with default values.
   });
-</script>
+</script> {% endcomment %}
 
 {% endblock %}
