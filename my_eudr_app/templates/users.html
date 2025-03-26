@@ -126,7 +126,7 @@ Users
   </div>
 </div>
 
-<script>
+{% comment %} <script>
   document.getElementById('filterForm').addEventListener('submit', function (event) {
     event.preventDefault();
 
@@ -225,5 +225,5 @@ document.getElementById("resetFilter").addEventListener("click", function () {
   document.getElementById("endDate").value = "";
   document.getElementById("filterForm").submit(); //Or reload the page, or run filter with default values.
 });
-</script>
+</script> {% endcomment %}
 {% endblock %}
