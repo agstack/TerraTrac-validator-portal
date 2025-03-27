@@ -2355,13 +2355,14 @@ async function fetchAndDisplayTotalBackups() {
     if (!response.ok) throw new Error("Network response was not ok");
 
     const data = await response.json();
-    console.log("Total Backups Data:", data);
-    const totalBackupsElement = querySelector("#total_backups");
+    console.log("Total Backups Data on Dashboard:", data);
+    const totalBackupsElement =  document.querySelector("#total_backups");
+    console.log("Total Backups Element:", totalBackupsElement);
     if (totalBackupsElement) {
       totalBackupsElement.innerText = data.length;
     }
   } catch (error) {
-    // console.error("Error fetching total backups:", error);
+    console.error("Error fetching total backups:", error);
   }
 }
 
