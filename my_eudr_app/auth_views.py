@@ -327,8 +327,12 @@ def logout_view(request):
         )
 }
 )
-@api_view(['POST'])
+# @api_view(['POST'])
+@api_view(['GET', 'POST'])
 def password_reset_request(request):
+    if request.method == "GET":
+        password_reset_form = PasswordResetForm()
+        return render(request, "auth/password_reset.html", {"form": password_reset_form})
     if request.method == "POST":
         password_reset_form = PasswordResetForm(request.POST)
         if password_reset_form.is_valid():
@@ -365,7 +369,8 @@ def password_reset_request(request):
 
 @swagger_auto_schema(method='get', security=[],
                      tags=["User Management"], operation_summary="Endpoint that allows a user to reset their password")
-@api_view(['GET'])
+# @api_view(['GET'])
+@api_view(['GET', 'POST'])
 def password_reset_confirm(request, uidb64=None, token=None):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
