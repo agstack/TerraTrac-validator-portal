@@ -71,6 +71,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("auth/", include("my_eudr_app.urls")),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
             schema_view.without_ui(cache_timeout=0), name='schema-json'),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
@@ -80,7 +81,7 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc',
          cache_timeout=0), name='schema-redoc'),
     path("", views.index, name="index"),
-    path("auth/", include("my_eudr_app.urls")),
+#     path("auth/", include("my_eudr_app.urls")),
     path("validator/", views.validator, name="validator"),
     path("validated_files/", views.validated_files, name="validated_files"),
     path("map/", views.map, name="map"),
