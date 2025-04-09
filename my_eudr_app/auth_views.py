@@ -328,24 +328,68 @@ def logout_view(request):
         )
 }
 )
-# @api_view(['POST'])
+# # @api_view(['POST'])
+# @api_view(['GET', 'POST'])
+# def password_reset_request(request):
+#     if request.method == "GET":
+#         password_reset_form = PasswordResetForm()
+#         return render(request, "auth/password_reset.html", {"form": password_reset_form})
+#     if request.method == "POST":
+#         password_reset_form = PasswordResetForm(request.POST)
+#         if password_reset_form.is_valid():
+#             data = password_reset_form.cleaned_data['email']
+#             # associated_users = User.objects.filter(email=data)
+#             associated_users = User.objects.filter(Q(email=data) | Q(username=data))
+#             if associated_users.exists():
+#                 for user in associated_users:
+#                     subject = "TerraTrav Validation Portal - Password Reset Requested"
+#                     email_template_name = "auth/password_reset_email.html"
+#                     c = {
+#                         "email": user.email,
+#                         "domain": request.get_host(),
+#                         "site_name": "TerraTrac Validation Portal",
+#                         "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+#                         "user": user,
+#                         "token": default_token_generator.make_token(user),
+#                         "protocol": 'https' if request.is_secure() else 'http',
+#                     }
+#                     email = render_to_string(email_template_name, c)
+#                     send_mail(subject, message=email, html_message=email,
+#                               from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[user.email])
+
+#                 messages.success(
+#                     request, 'A link to reset your password has been sent to your email address.')
+#                 return redirect(reverse('password_reset'))
+#             else:
+#                 messages.error(
+#                     request, 'No user found with this email address.')
+#                 return redirect(reverse('password_reset'))
+
+#     password_reset_form = PasswordResetForm()
+#     return render(request, "auth/password_reset.html", {"form": password_reset_form})
+
 @api_view(['GET', 'POST'])
 def password_reset_request(request):
     if request.method == "GET":
         password_reset_form = PasswordResetForm()
         return render(request, "auth/password_reset.html", {"form": password_reset_form})
+
     if request.method == "POST":
         password_reset_form = PasswordResetForm(request.POST)
         if password_reset_form.is_valid():
             data = password_reset_form.cleaned_data['email']
-            # associated_users = User.objects.filter(email=data)
+            # Match users where either email or username equals the entered email
             associated_users = User.objects.filter(Q(email=data) | Q(username=data))
+
             if associated_users.exists():
                 for user in associated_users:
+                    # Use email if available, otherwise use username as fallback
+                    recipient = user.email if user.email else user.username
+
                     subject = "TerraTrav Validation Portal - Password Reset Requested"
                     email_template_name = "auth/password_reset_email.html"
                     c = {
-                        "email": user.email,
+                        "email": recipient,
                         "domain": request.get_host(),
                         "site_name": "TerraTrac Validation Portal",
                         "uid": urlsafe_base64_encode(force_bytes(user.pk)),
@@ -354,15 +398,21 @@ def password_reset_request(request):
                         "protocol": 'https' if request.is_secure() else 'http',
                     }
                     email = render_to_string(email_template_name, c)
-                    send_mail(subject, message=email, html_message=email,
-                              from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[user.email])
+
+                    send_mail(
+                        subject,
+                        message=email,
+                        html_message=email,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[recipient]
+                    )
 
                 messages.success(
                     request, 'A link to reset your password has been sent to your email address.')
                 return redirect(reverse('password_reset'))
             else:
                 messages.error(
-                    request, 'No user found with this email address.')
+                    request, 'No user found with this email address or username.')
                 return redirect(reverse('password_reset'))
 
     password_reset_form = PasswordResetForm()
