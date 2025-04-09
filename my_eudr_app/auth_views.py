@@ -20,6 +20,7 @@ from drf_yasg import openapi
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
 
 
 @swagger_auto_schema(method='post', request_body=openapi.Schema(type=openapi.TYPE_OBJECT, properties={
@@ -337,7 +338,8 @@ def password_reset_request(request):
         password_reset_form = PasswordResetForm(request.POST)
         if password_reset_form.is_valid():
             data = password_reset_form.cleaned_data['email']
-            associated_users = User.objects.filter(email=data)
+            # associated_users = User.objects.filter(email=data)
+            associated_users = User.objects.filter(Q(email=data) | Q(username=data))
             if associated_users.exists():
                 for user in associated_users:
                     subject = "TerraTrav Validation Portal - Password Reset Requested"
