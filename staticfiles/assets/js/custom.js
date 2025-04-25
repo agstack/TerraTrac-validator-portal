@@ -1558,6 +1558,7 @@ async function fetchFiles(apiEndpoint) {
     if (!response.ok) throw new Error("Network response was not ok");
 
     const data = await response.json();
+    console.log("API Response:", data); // Inspect the response
 
     // Check if data is valid and not empty
     if (!data || !Array.isArray(data) || data.length === 0) {
@@ -1656,28 +1657,59 @@ function initializeDataTable() {
   });
 }
 
-// Handle filter submission
-filterForm.addEventListener("submit", (event) => {
-  event.preventDefault();
+// // Handle filter submission
+// filterForm.addEventListener("submit", (event) => {
+//   event.preventDefault();
 
-  const startDate = document.getElementById("startDate").value;
-  const endDate = document.getElementById("endDate").value;
-  let apiUrl = "/api/files/list/all/";
+//   const startDate = document.getElementById("startDate").value;
+//   const endDate = document.getElementById("endDate").value;
+//   let apiUrl = "/api/files/list/all/";
 
-  // If both dates are provided, fetch only the filtered data
-  if (startDate && endDate) {
-    apiUrl = `/uploads/api/filtered_files/list/all/?startDate=${startDate}&endDate=${endDate}`;
+//   // If both dates are provided, fetch only the filtered data
+//   if (startDate && endDate) {
+//     apiUrl = `/uploads/api/filtered_files/list/all/?startDate=${startDate}&endDate=${endDate}`;
+//   }
+
+//   fetchFiles(apiUrl);
+// });
+
+// Make sure the DOM is fully loaded before trying to access elements
+document.addEventListener("DOMContentLoaded", function() {
+  // Get the filter form element
+  const filterForm = document.getElementById("filterForm");
+  
+  // Only add the event listener if the form exists
+  if (filterForm) {
+    filterForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+    
+      const startDate = document.getElementById("startDate").value;
+      const endDate = document.getElementById("endDate").value;
+      let apiUrl = "/api/files/list/all/";
+    
+      // If both dates are provided, fetch only the filtered data
+      if (startDate && endDate) {
+        apiUrl = `/uploads/api/filtered_files/list/all/?startDate=${startDate}&endDate=${endDate}`;
+      }
+    
+      fetchFiles(apiUrl);
+    });
+
+    // Reset filter: clear filter fields and reload the full file list
+    resetFilterBtn.addEventListener("click", () => {
+      document.getElementById("startDate").value = "";
+      document.getElementById("endDate").value = "";
+      fetchFiles("/api/files/list/all/");
+    });
   }
-
-  fetchFiles(apiUrl);
 });
 
-// Reset filter: clear filter fields and reload the full file list
-resetFilterBtn.addEventListener("click", () => {
-  document.getElementById("startDate").value = "";
-  document.getElementById("endDate").value = "";
-  fetchFiles("/api/files/list/all/");
-});
+// // Reset filter: clear filter fields and reload the full file list
+// resetFilterBtn.addEventListener("click", () => {
+//   document.getElementById("startDate").value = "";
+//   document.getElementById("endDate").value = "";
+//   fetchFiles("/api/files/list/all/");
+// });
 
 // Initial fetch for all files on page load
 fetchFiles("/api/files/list/all/");
@@ -1967,7 +1999,38 @@ function displayUsers(data) {
   initializeDataTable();
 }
 
-// Handle filter submission
+// // Handle filter submission
+// filterForm.addEventListener("submit", (event) => {
+//   event.preventDefault();
+
+//   const startDate = document.getElementById("startDate").value;
+//   const endDate = document.getElementById("endDate").value;
+//   let apiUrl = "/api/users/";
+
+//   // If both dates are provided, fetch only the filtered data
+//   if (startDate && endDate) {
+//     apiUrl = `/api/filtered_users/?startDate=${startDate}&endDate=${endDate}`;
+//   }
+
+//   fetchUsers(apiUrl);
+// });
+
+// // Reset filter: clear filter fields and reload the full user list
+// resetFilterBtn.addEventListener("click", () => {
+//   document.getElementById("startDate").value = "";
+//   document.getElementById("endDate").value = "";
+//   fetchUsers("/api/users/");
+// });
+
+// Make sure the DOM is fully loaded before trying to access elements
+document.addEventListener("DOMContentLoaded", function() {
+  // Get the filter form element
+  const filterForm = document.getElementById("filterForm");
+
+  // Only add the event listener if the form exists
+  if (filterForm) {
+
+  // Handle filter submission
 filterForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
@@ -1988,6 +2051,8 @@ resetFilterBtn.addEventListener("click", () => {
   document.getElementById("startDate").value = "";
   document.getElementById("endDate").value = "";
   fetchUsers("/api/users/");
+});
+  }
 });
 
 // Initial fetch for all users on page load
@@ -2315,7 +2380,39 @@ function displayBackups(data) {
   initializeDataTable();
 }
 
-// Handle filter submission
+// // Handle filter submission
+// filterForm.addEventListener("submit", (event) => {
+//   event.preventDefault();
+
+//   const startDate = document.getElementById("startDate").value;
+//   const endDate = document.getElementById("endDate").value;
+//   let apiUrl = "/api/collection_sites/list";
+
+//   // If both dates are provided, fetch only the filtered data
+//   if (startDate && endDate) {
+//     apiUrl = `/api/collection_sites/filter/?startDate=${startDate}&endDate=${endDate}`;
+//   }
+
+//   fetchBackups(apiUrl);
+// });
+
+// // Reset filter: clear filter fields and reload the full user list
+// resetFilterBtn.addEventListener("click", () => {
+//   document.getElementById("startDate").value = "";
+//   document.getElementById("endDate").value = "";
+//   fetchBackups("/api/collection_sites/list");
+// });
+
+
+// Make sure the DOM is fully loaded before trying to access elements
+document.addEventListener("DOMContentLoaded", function() {
+  // Get the filter form element
+  const filterForm = document.getElementById("filterForm");
+  
+  // Only add the event listener if the form exists
+  if (filterForm) {
+
+    // Handle filter submission
 filterForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
@@ -2336,6 +2433,8 @@ resetFilterBtn.addEventListener("click", () => {
   document.getElementById("startDate").value = "";
   document.getElementById("endDate").value = "";
   fetchBackups("/api/collection_sites/list");
+});
+  }
 });
 
 // Initial fetch for all backups on page load
