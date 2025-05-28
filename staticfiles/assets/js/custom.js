@@ -19,7 +19,6 @@ if (mapMonde) {
     );
   }
 }
-
 document
   .getElementById("logout")
   .addEventListener("click", async function (event) {
