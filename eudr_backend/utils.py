@@ -184,8 +184,8 @@ def format_geojson_data(geojson, analysis, file_id=None):
             "geoid": properties.get("geoid"),
             "file_id": file_id,
             "analysis": {
-                "is_in_protected_areas": analysis[i].get('WDPA'),
-                "is_in_water_body": analysis[i].get('In_waterbody'),
+                "is_in_protected_areas": False,
+                "is_in_water_body": properties.get('In_waterbody'),
                 "forest_change_loss_after_2020": analysis[i].get('GFC_loss_after_2020'),
                 "fire_after_2020": analysis[i].get('MODIS_fire_after_2020'),
                 "radd_after_2020": analysis[i].get('RADD_after_2020'),

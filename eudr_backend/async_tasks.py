@@ -27,6 +27,7 @@ async def async_create_farm_data(data, file_id, isSyncing=False, hasCreatedFiles
         return errors, created_data
     else:
         err, analysis_results = await perform_analysis(data)
+        print(analysis_results)
         if err:
             # delete the file if there are errors
             EUDRUploadedFilesModel.objects.get(id=file_id).delete()
@@ -58,8 +59,9 @@ async def get_existing_record(data):
 
 
 async def perform_analysis(data, hasCreatedFiles=[]):
-    url = "https://whisp.openforis.org/api/geojson"
-    headers = {"Content-Type": "application/json"}
+    url = "https://whisp.openforis.org/api/submit/geojson"
+    headers = {"X-API-KEY": "7f7aaa3a-e99e-4c53-b79c-d06143ef8c1f",
+               "Content-Type": "application/json"}
     settings = await sync_to_async(WhispAPISetting.objects.first)()
     chunk_size = settings.chunk_size if settings else 500
     analysis_results = []
@@ -84,8 +86,8 @@ async def perform_analysis(data, hasCreatedFiles=[]):
                     EUDRUploadedFilesModel.objects.filter(
                         id__in=hasCreatedFiles).delete()
                 return {"Validation against global database failed."}, None
-            analysis_results.extend(response.json().get('data', []))
-
+            analysis_results.extend(response.json().get(
+                'data', []). get('features', []))
     return None, analysis_results
 
 
