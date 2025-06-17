@@ -557,6 +557,7 @@ def create_farm_data(request):
         file_name = file.name.split('.')[0]
         # Custom function to read data from file if needed
         raw_data = extract_data_from_file(file, data_format)
+        # print("raw data",raw_data)
     else:
         file_name = "uploaded_data"
 
@@ -567,6 +568,7 @@ def create_farm_data(request):
         errors = validate_geojson(raw_data)
     elif data_format == 'csv':
         errors = validate_csv(raw_data)
+        # print("errors",errors)
     else:
         return Response({'error': 'Unsupported format'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -577,6 +579,7 @@ def create_farm_data(request):
 
     if data_format == 'csv':
         raw_data = transform_csv_to_json(raw_data)
+        # print("raw data converted to json",raw_data)
 
     # Combine file_name and format for database entry
     file_data = {
@@ -606,10 +609,11 @@ def create_farm_data(request):
         # Custom function to handle failed file entries
         handle_failed_file_entry(file_serializer, file, request.user)
         return Response({'error': 'File serialization failed'}, status=status.HTTP_400_BAD_REQUEST)
-
+    # print("username",request.user.username,request.user.is_authenticated )
     # Proceed with other operations...
-    update_geoid(repeat=60,
-                 user_id=request.user.username if request.user.is_authenticated else "admin")
+    # update_geoid(repeat=60,
+    #              user_id=request.user.username if request.user.is_authenticated else "admin")
+    update_geoid(user_id=request.user.username if request.user.is_authenticated else "admin")
     store_file_in_s3(file, request.user, file_name, True) if file else None
     return Response({'message': 'File/data processed successfully', 'file_id': file_id}, status=status.HTTP_201_CREATED)
 
@@ -1388,6 +1392,9 @@ def retrieve_all_synced_farm_data_by_cs(request, pk):
 @permission_classes([IsAuthenticated])
 def retrieve_collection_sites(request):
     data = EUDRCollectionSiteModel.objects.all().order_by("-updated_at")
+    
+    # Corrected line: Call .count() to get the actual number
+    # print("collection site data", data.count())
 
     serializer = EUDRCollectionSiteModelSerializer(data, many=True)
 

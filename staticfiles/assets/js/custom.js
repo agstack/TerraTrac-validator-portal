@@ -464,16 +464,24 @@ if (response) {
       return resp.json();
     })
     .then((data) => {
+      // const farmsWithAnalysis = data.filter(farm => farm.analysis);
+      // console.log("famr data",data)
+      // console.log("analysis",data[0].analysis?.risk_timber)
+    //   data.forEach((farm, index) => {
+    //   const risk = farm.analysis?.risk_timber ?? "not provided";
+    //   console.log(`Farm #${index} | Agent: ${farm.agent_name} | risk_timber: ${risk}`);
+    // });
+
       farmData = data;
       filteredFarms = data.map((farm) => {
         farm.updated_at = new Date(farm.updated_at).toLocaleString();
         return farm;
       });
-      // order filteredFarms by analysis.eudr_risk_level
+      // order filteredFarms by farmData[i].analysis?.risk_timber
       filteredFarms.sort((a, b) => {
-        if (a.analysis.eudr_risk_level === "low") {
+        if (a.analysis?.risk_timber === "low") {
           return -1;
-        } else if (a.analysis.eudr_risk_level === "medium") {
+        } else if (a.analysis?.risk_timber === "medium") {
           return 0;
         } else {
           return 1;
@@ -484,13 +492,13 @@ if (response) {
         document.querySelector("#total_farms").innerText = data.length;
         // check where eudr_risk_level is high and calculate the percentage
         const lowRiskFarms = data.filter(
-          (farm) => farm.analysis.eudr_risk_level === "low"
+          (farm) => farm.analysis?.eudr_risk_level === "low"
         );
         const highRiskFarms = data.filter(
-          (farm) => farm.analysis.eudr_risk_level === "high"
+          (farm) => farm.analysis?.eudr_risk_level === "high"
         );
         const moreInfoNeededFarms = data.filter(
-          (farm) => farm.analysis.eudr_risk_level === "more_info_needed"
+          (farm) => farm.analysis?.eudr_risk_level === "more_info_needed"
         );
 
         const lowPercentage = (
@@ -770,6 +778,8 @@ collectionSiteDropdown?.addEventListener("change", (e) => {
 
   farmsContainer.innerHTML = "";
 
+  console.log("filtered farms",filteredFarms);
+
   generateData(filteredFarms, farmsContainer);
 });
 
@@ -783,7 +793,7 @@ document
       selectedRiskLevel === ""
         ? farmData
         : farmData.filter(
-            (farm) => farm.analysis.eudr_risk_level === selectedRiskLevel
+            (farm) => farm.farmData[i].analysis?.risk_timber === selectedRiskLevel
           );
 
     farmsContainer.innerHTML = "";
@@ -1086,7 +1096,7 @@ function generateData(farmData, farmsContainer) {
               }</p>
             </td>
             <td>
-              <p
+<p
                 class="${
                   farmData[i].analysis.eudr_risk_level === "high"
                     ? "text-xs font-weight-bold mb-0"
@@ -1105,9 +1115,11 @@ function generateData(farmData, farmsContainer) {
         ? "#15E289"
         : farmData[i].analysis.eudr_risk_level
     }">${
-      farmData[i].analysis.eudr_risk_level
+      typeof farmData[i].analysis?.eudr_risk_level === "string"
+      ? farmData[i].analysis.eudr_risk_level
         .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase()) || "-"
+        .replace(/\b\w/g, (char) => char.toUpperCase())
+      : "-"
     }</p>
             </td>
             <td class="align-middle text-center text-sm">
